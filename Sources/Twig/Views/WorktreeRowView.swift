@@ -10,7 +10,15 @@ struct WorktreeRowView: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Button { Task { await store.open(item) } } label: {
+            Button {
+                // Read modifiers synchronously; the key may be released before an async task starts.
+                let modifiers = NSApp.currentEvent?.modifierFlags ?? NSEvent.modifierFlags
+                if modifiers.contains(.option) {
+                    store.openFolder(item)
+                } else {
+                    Task { await store.open(item) }
+                }
+            } label: {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(shortLabel(item.worktree.repositoryName))
@@ -27,7 +35,7 @@ struct WorktreeRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Open in \(store.editorName(for: item))\n\(branchLabel)\n\(item.worktree.folder.path)\n\(store.resolution(for: item).reason)")
+            .help("Open in \(store.editorName(for: item))\nOption-click to open folder in Finder\n\(branchLabel)\n\(item.worktree.folder.path)\n\(store.resolution(for: item).reason)")
             .accessibilityLabel("Open \(item.worktree.repositoryName), \(branchLabel), in \(store.editorName(for: item))")
 
             Menu {

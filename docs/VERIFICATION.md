@@ -41,8 +41,12 @@ For the 1 October iteration, native preview checks confirmed that the initial vi
 
 The final app was rebuilt in normal menu bar mode after these checks.
 
+### Glass, search, and Option-click iteration
+
+The final build uses SwiftUI's native clear Liquid Glass effect over an ultra-thin system backdrop, with rounded clipping and no AppKit glass wrapper. A CleanShot capture of the actual menu-bar popover showed background blending. Repeated transitions through the full list, a matching `Beatly` query, and a no-results `sfs` query retained identical 360 × 435 panel dimensions, with the search header at the top. Clearing search restored the list. Option-clicking the matching Beatly row opened Finder; its folder URL was checked against the row's exact canonical worktree path. The 75-test regression suite and final build/launch checks passed.
+
 ## Practical limits
 
-Xcode is the only supported IDE installed on this test machine. Other editors' detection, bundle matching, and launch decisions have fixture coverage; their actual installed applications were not launched. Menu-bar popover placement/dismissal, VoiceOver, older macOS versions, and Intel hardware still need release testing. Project-target detail actions and preference recovery have code/core coverage but were not exhaustively exercised through every UI path.
+Xcode is the only supported IDE installed on this test machine. Other editors' detection, bundle matching, and launch decisions have fixture coverage; their actual installed applications were not launched. Menu-bar placement and search were checked on this display, but multiple displays, VoiceOver, older macOS versions, and Intel hardware still need release testing. Project-target detail actions and preference recovery have code/core coverage but were not exhaustively exercised through every UI path.
 
 This is a local development MVP, not a notarized distribution release. Heuristics cannot prove a user's preferred editor; use the per-worktree override for ambiguous repositories. Recency is filesystem/Git activity plus successful opens, not Codex chat recency.

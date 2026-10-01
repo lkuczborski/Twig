@@ -21,7 +21,7 @@ struct WorktreeMenuView: View {
             }
         }
         .frame(width: 360)
-        .background(.regularMaterial)
+        .modifier(MenuGlassBackground())
         .background(WindowVisibilityObserver { visible in
             store.contentVisibilityChanged("menu", isVisible: visible)
         }.frame(width: 0, height: 0))
@@ -52,7 +52,25 @@ struct WorktreeMenuView: View {
         .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 9)
     }
 
-    @ViewBuilder private var content: some View {
+    private var content: some View {
+        ScrollView {
+            LazyVStack(spacing: 1) {
+                ForEach(store.filteredItems) { item in WorktreeRowView(item: item, store: store) }
+            }.padding(5)
+        }
+        // Search changes the contents, not the panel's size. Keeping the scroll
+        // container alive also preserves the hosting window's layout and clipping.
+        .frame(height: contentHeight)
+        .overlay {
+            if store.filteredItems.isEmpty { emptyState }
+        }
+    }
+
+    private var contentHeight: CGFloat {
+        store.items.isEmpty ? 130 : min(400, CGFloat(store.items.count) * 53 + 10)
+    }
+
+    @ViewBuilder private var emptyState: some View {
         if store.items.isEmpty {
             VStack(spacing: 8) {
                 if store.isRefreshing {
@@ -62,17 +80,10 @@ struct WorktreeMenuView: View {
                     Text("Choose your Codex folder in Settings.").font(.caption).foregroundStyle(.secondary)
                     Button("Settings…") { NSApp.activate(ignoringOtherApps: true); openSettings() }
                 }
-            }.frame(maxWidth: .infinity).padding(.vertical, 25)
-        } else if store.filteredItems.isEmpty {
-            Text("No matching worktrees").font(.system(size: 13)).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity).padding(.vertical, 25)
+            }.frame(maxWidth: .infinity)
         } else {
-            ScrollView {
-                LazyVStack(spacing: 1) {
-                    ForEach(store.filteredItems) { item in WorktreeRowView(item: item, store: store) }
-                }.padding(5)
-            }
-            .frame(height: min(400, CGFloat(store.filteredItems.count) * 53 + 10))
+            Text("No matching worktrees").font(.system(size: 13)).foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -84,5 +95,21 @@ struct WorktreeMenuView: View {
             Button { store.errorMessage = nil } label: { Image(systemName: "xmark") }
                 .buttonStyle(.plain).accessibilityLabel("Dismiss error")
         }.padding(10).background(.orange.opacity(0.08))
+    }
+}
+
+/// Apply glass at the window boundary so the entire popover shares one surface.
+/// Older systems retain MenuBarExtra's native material.
+private struct MenuGlassBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *) {
+            content
+                .background(.ultraThinMaterial)
+                .glassEffect(.clear, in: .rect(cornerRadius: 14))
+                .clipShape(.rect(cornerRadius: 14))
+                .containerBackground(.clear, for: .window)
+        } else {
+            content
+        }
     }
 }

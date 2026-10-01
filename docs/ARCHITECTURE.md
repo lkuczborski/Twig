@@ -72,6 +72,10 @@ Installed applications are identified by known bundle identifiers through Launch
 
 ## State, persistence, and concurrency
 
+The menu uses one SwiftUI Liquid Glass surface on macOS 26+: a clear `glassEffect`, an ultra-thin system backdrop to sample content behind the menu-bar window, and matching rounded clipping. The hosting window background is transparent; there is no AppKit glass wrapper or opaque custom fill. Earlier macOS versions retain the native menu-bar material. Search keeps the scroll container alive and sizes its viewport from the unfiltered catalog, so matching and empty states do not resize the hosting panel or move the search header.
+
+Worktree button actions capture modifier flags synchronously. Option-click opens the checkout folder through the existing workspace service; an ordinary click resolves and opens its IDE. The same Finder action remains available in the row menu.
+
 `TwigStore` owns observable UI state on `MainActor`. The `WorktreeScanner` actor serializes discovery and detection off the main actor. It caches project inference by canonical checkout ID, rechecks only invalidated or new checkouts, and prunes removed entries. Git metadata and activity are refreshed on a relevant change; branch-only changes reuse project inference. Manual full refresh and changing Codex home discard inference. Results from a Codex home that changed during scanning are discarded.
 
 ### Event-driven syncing
