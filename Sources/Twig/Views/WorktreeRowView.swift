@@ -5,7 +5,7 @@ import TwigCore
 struct WorktreeRowView: View {
     let item: ScannedWorktree
     @Bindable var store: TwigStore
-    @Environment(\.openWindow) private var openWindow
+    let showDetails: () -> Void
     @State private var hovering = false
 
     var body: some View {
@@ -60,8 +60,7 @@ struct WorktreeRowView: View {
                 }
                 Button("Project & detection details…") {
                     store.selectedID = item.id
-                    openWindow(id: "details")
-                    NSApp.activate(ignoringOtherApps: true)
+                    showDetails()
                 }
                 Divider()
                 Button("Open folder in Finder") { store.openFolder(item) }

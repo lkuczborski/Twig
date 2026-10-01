@@ -32,7 +32,7 @@ Optional `--debug`, `--logs`, and `--telemetry` modes are supported by the run s
 - Use **Project & detection details** to see the complete branch and path, the reason for each suggestion, and choose a particular nested project.
 - Settings lets you change Codex home and choose a fallback editor. An explicit worktree override takes priority; unavailable overrides produce a helpful error.
 - The compact menu shows only search, repository names, branch names, and action menus. Settings and Quit are in the gear menu.
-- On macOS 26+, the popover uses SwiftUI Liquid Glass over a native translucent backdrop. Search keeps the panel size stable, including when no results match.
+- On macOS 26+, the panel uses native SwiftUI Liquid Glass directly over the content behind it. A small AppKit bridge presents a transparent window without an extra frosted backdrop. Search keeps the panel size stable, including when no results match.
 - Filesystem notifications keep the list current. While the menu is closed, Twig records pending changes without scanning; it refreshes when next shown. Unchanged openings reuse cached results. ⌘R forces a full refresh; Settings is ⌘, and Quit is ⌘Q while Twig is focused.
 
 The default discovery root is `$CODEX_HOME/worktrees` when the launching process supplies `CODEX_HOME`, otherwise `~/.codex/worktrees`. Finder-launched apps do not inherit shell startup variables; use Settings for a custom root. Only existing local worktrees are shown, not deleted/archived folders or remote machines.
@@ -64,7 +64,7 @@ Preferences live in `~/Library/Application Support/Twig/preferences.json`. They 
 
 - `Sources/TwigCore`: Foundation-only discovery, detection, resolution, app inventory, persistence.
 - `Sources/TwigSync`: FSEvents subscriptions, change routing, and visibility-aware refresh state.
-- `Sources/Twig`: SwiftUI scenes, observable app store, window visibility, AppKit launch boundary.
+- `Sources/Twig`: SwiftUI views, observable app store, and a small AppKit boundary for menu-bar presentation, window visibility, and launching.
 - `Sources/TwigInspect`: read-only JSON diagnostics using the same core logic.
 - `Tests/TwigCoreTests`: temporary fixtures for discovery, inference, caching, launching policy, app inventory, and persistence.
 - `Tests/TwigSyncTests`: event routing, hidden-state coalescing, and real FSEvents integration tests.

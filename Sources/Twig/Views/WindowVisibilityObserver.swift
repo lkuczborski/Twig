@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// SwiftUI may retain MenuBarExtra content after dismissal. Observe the actual hosting window instead.
+/// Hosted SwiftUI content survives dismissal. Observe the actual window's visibility.
 struct WindowVisibilityObserver: NSViewRepresentable {
     let onChange: (Bool) -> Void
 

@@ -72,7 +72,11 @@ Installed applications are identified by known bundle identifiers through Launch
 
 ## State, persistence, and concurrency
 
-The menu uses one SwiftUI Liquid Glass surface on macOS 26+: a clear `glassEffect`, an ultra-thin system backdrop to sample content behind the menu-bar window, and matching rounded clipping. The hosting window background is transparent; there is no AppKit glass wrapper or opaque custom fill. Earlier macOS versions retain the native menu-bar material. Search keeps the scroll container alive and sizes its viewport from the unfiltered catalog, so matching and empty states do not resize the hosting panel or move the search header.
+The menu uses one native SwiftUI `glassEffect(.regular)` surface on macOS 26+, with matching rounded clipping. `MenuBarPanelController` presents it through an `NSHostingView` in a transparent, nonactivating `NSPanel`. This avoids `MenuBarExtra`'s additional frosted window backdrop, which caused the glass to sample already-blurred content instead of the desktop directly. There is no AppKit glass wrapper, custom blur, tint, or opacity approximation. Earlier macOS versions use one SwiftUI ultra-thin material in the same transparent panel.
+
+AppKit owns application startup, the status item, positioning, focus, Escape/outside-click dismissal, and reusable Settings/detail windows; SwiftUI owns all view content, controls, glass, and observable model bindings. Presentation actions are explicit callbacks, so the hosted views do not rely on scene actions from an absent SwiftUI scene. Native edit-menu commands preserve text editing. Event monitors exist only while the panel is open and are removed on dismissal. Native action-menu tracking preserves the parent panel, and clicks on Twig's status button are left to its toggle action rather than the outside-click monitor. No refresh polling or presentation timer is added.
+
+Search keeps the scroll container alive and sizes its viewport from the unfiltered catalog, so matching and empty states do not resize the hosting panel or move the search header. SwiftUI geometry changes resize and re-anchor the panel when its catalog or banners change; presentation restores search focus through `FocusState`.
 
 Worktree button actions capture modifier flags synchronously. Option-click opens the checkout folder through the existing workspace service; an ordinary click resolves and opens its IDE. The same Finder action remains available in the row menu.
 

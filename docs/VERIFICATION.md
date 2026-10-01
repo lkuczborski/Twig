@@ -37,13 +37,17 @@ Verified through native UI automation:
 - Settings opened with the active Codex home and the correct fallback value.
 - “Open enclosing folder” opened Finder at the parent directory and selected the exact worktree folder.
 
-For the 1 October iteration, native preview checks confirmed that the initial visibility notification populated the real list, repository/branch rows rendered without app logos or extra labels, search narrowed the list, and the gear and per-worktree menus retained their actions. Cache and hidden-refresh behavior were checked through the scanner and refresh-state tests; menu-only dismissal remains a release smoke check because the automation surface requires the preview window.
+For the 1 October iteration, native preview checks confirmed that the initial visibility notification populated the real list, repository/branch rows rendered without app logos or extra labels, search narrowed the list, and the gear and per-worktree menus retained their actions. Cache and hidden-refresh behavior were checked through the scanner and refresh-state tests; menu-only checks were completed in the later glass iteration below.
 
 The final app was rebuilt in normal menu bar mode after these checks.
 
 ### Glass, search, and Option-click iteration
 
-The final build uses SwiftUI's native clear Liquid Glass effect over an ultra-thin system backdrop, with rounded clipping and no AppKit glass wrapper. A CleanShot capture of the actual menu-bar popover showed background blending. Repeated transitions through the full list, a matching `Beatly` query, and a no-results `sfs` query retained identical 360 × 435 panel dimensions, with the search header at the top. Clearing search restored the list. Option-clicking the matching Beatly row opened Finder; its folder URL was checked against the row's exact canonical worktree path. The 75-test regression suite and final build/launch checks passed.
+The initial implementation stacked clear Liquid Glass with an ultra-thin backdrop inside `MenuBarExtra`. The user's comparison revealed that this washed out the content behind the panel. It has been replaced with native SwiftUI regular Liquid Glass hosted in a transparent AppKit panel, with no additional material on macOS 26+.
+
+A CleanShot capture of the actual running menu panel over a controlled cyan/white/black backdrop confirmed distinct light and dark bands through the glass and rounded reflective edges. The same test in `MenuBarExtra` produced a broadly frosted surface. Temporary test windows and rendering diagnostics were removed after verification.
+
+Repeated full-list, matching `Beatly`, and no-results `sfs` searches retained identical 360 × 435 dimensions and a search header at the top. Option-click opened the exact canonical Beatly worktree folder in Finder. The native row menu opened the SwiftUI detection-details window, the gear menu opened SwiftUI Settings, and both windows closed through their native close controls. Five consecutive status-item open/close cycles passed; search received focus on presentation and Escape dismissed the panel. A status-click race in the global event monitor was found and fixed during this check. The 75-test regression suite and build/launch checks passed.
 
 ## Practical limits
 

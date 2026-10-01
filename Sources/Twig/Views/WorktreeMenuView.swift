@@ -3,7 +3,8 @@ import SwiftUI
 
 struct WorktreeMenuView: View {
     @Bindable var store: TwigStore
-    @Environment(\.openSettings) private var openSettings
+    let presentation: MenuPresentationActions
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -24,6 +25,7 @@ struct WorktreeMenuView: View {
         .modifier(MenuGlassBackground())
         .background(WindowVisibilityObserver { visible in
             store.contentVisibilityChanged("menu", isVisible: visible)
+            DispatchQueue.main.async { searchFocused = visible }
         }.frame(width: 0, height: 0))
     }
 
@@ -32,6 +34,7 @@ struct WorktreeMenuView: View {
             Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(.secondary)
             TextField("Search worktrees", text: $store.search)
                 .textFieldStyle(.plain).accessibilityLabel("Search worktrees")
+                .focused($searchFocused)
                 .onSubmit { if let first = store.filteredItems.first { Task { await store.open(first) } } }
             if !store.search.isEmpty {
                 Button { store.search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
@@ -41,7 +44,7 @@ struct WorktreeMenuView: View {
             Menu {
                 Button("Refresh") { Task { await store.refresh() } }.keyboardShortcut("r")
                 Divider()
-                Button("Settings…") { NSApp.activate(ignoringOtherApps: true); openSettings() }.keyboardShortcut(",")
+                Button("Settings…") { showSettings() }.keyboardShortcut(",")
                 Button("Quit Twig") { NSApp.terminate(nil) }.keyboardShortcut("q")
             } label: {
                 Image(systemName: "gearshape").foregroundStyle(.secondary).frame(width: 22, height: 22)
@@ -55,7 +58,7 @@ struct WorktreeMenuView: View {
     private var content: some View {
         ScrollView {
             LazyVStack(spacing: 1) {
-                ForEach(store.filteredItems) { item in WorktreeRowView(item: item, store: store) }
+                ForEach(store.filteredItems) { item in WorktreeRowView(item: item, store: store, showDetails: showDetails) }
             }.padding(5)
         }
         // Search changes the contents, not the panel's size. Keeping the scroll
@@ -78,13 +81,21 @@ struct WorktreeMenuView: View {
                 } else {
                     Text("No worktrees").font(.system(size: 13, weight: .medium))
                     Text("Choose your Codex folder in Settings.").font(.caption).foregroundStyle(.secondary)
-                    Button("Settings…") { NSApp.activate(ignoringOtherApps: true); openSettings() }
+                    Button("Settings…") { showSettings() }
                 }
             }.frame(maxWidth: .infinity)
         } else {
             Text("No matching worktrees").font(.system(size: 13)).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity)
         }
+    }
+
+    private func showSettings() {
+        presentation.showSettings()
+    }
+
+    private func showDetails() {
+        presentation.showDetails()
     }
 
     private func errorBanner(_ message: String) -> some View {
@@ -98,18 +109,21 @@ struct WorktreeMenuView: View {
     }
 }
 
-/// Apply glass at the window boundary so the entire popover shares one surface.
-/// Older systems retain MenuBarExtra's native material.
+struct MenuPresentationActions {
+    let showSettings: () -> Void
+    let showDetails: () -> Void
+}
+
+/// One glass surface samples the desktop directly through the transparent panel.
 private struct MenuGlassBackground: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 26, *) {
             content
-                .background(.ultraThinMaterial)
-                .glassEffect(.clear, in: .rect(cornerRadius: 14))
+                .glassEffect(.regular, in: .rect(cornerRadius: 14))
                 .clipShape(.rect(cornerRadius: 14))
                 .containerBackground(.clear, for: .window)
         } else {
-            content
+            content.background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
         }
     }
 }
