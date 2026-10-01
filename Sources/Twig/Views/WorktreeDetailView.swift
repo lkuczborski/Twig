@@ -65,5 +65,8 @@ struct WorktreeDetailView: View {
                                        description: Text("Open a worktree’s actions menu and select Project & detection details."))
             }
         }.frame(minWidth: 480, minHeight: 420)
+            .background(WindowVisibilityObserver { visible in
+                store.contentVisibilityChanged("details", isVisible: visible)
+            }.frame(width: 0, height: 0))
     }
 }

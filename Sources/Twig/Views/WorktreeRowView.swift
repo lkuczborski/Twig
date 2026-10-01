@@ -11,36 +11,23 @@ struct WorktreeRowView: View {
     var body: some View {
         HStack(spacing: 5) {
             Button { Task { await store.open(item) } } label: {
-                HStack(spacing: 11) {
-                    Image(systemName: icon).font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(.secondary).frame(width: 32)
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack(spacing: 8) {
-                            Text(shortLabel(item.worktree.repositoryName)).font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1).truncationMode(.middle)
-                            Spacer(minLength: 2)
-                            Text(store.activityDate(for: item), style: .relative)
-                                .font(.system(size: 10)).foregroundStyle(.tertiary).lineLimit(1)
-                        }
-                        HStack(spacing: 5) {
-                            Image(systemName: "arrow.triangle.branch").font(.system(size: 10))
-                            Text(shortLabel(branchLabel)).font(.system(size: 11, design: .monospaced))
-                                .lineLimit(1).truncationMode(.middle)
-                            Spacer(minLength: 0)
-                        }.foregroundStyle(.secondary)
-                        HStack(spacing: 4) {
-                            if store.override(for: item) != nil { Image(systemName: "pin.fill").font(.system(size: 8)) }
-                            Text(shortLabel(store.editorName(for: item)))
-                            Image(systemName: "arrow.up.right").font(.system(size: 8, weight: .semibold))
-                        }.font(.system(size: 10)).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(shortLabel(item.worktree.repositoryName))
+                            .font(.system(size: 13, weight: .medium)).lineLimit(1).truncationMode(.middle)
+                        Text(shortLabel(branchLabel))
+                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
                     }
+                    Spacer(minLength: 0)
                     if store.openingID == item.id { ProgressView().controlSize(.mini) }
                 }
-                .padding(.vertical, 10).padding(.leading, 9)
+                .padding(.vertical, 8).padding(.leading, 8)
+                .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Open \(item.worktree.folder.path)\n\(store.resolution(for: item).reason)")
+            .help("Open in \(store.editorName(for: item))\n\(branchLabel)\n\(item.worktree.folder.path)\n\(store.resolution(for: item).reason)")
             .accessibilityLabel("Open \(item.worktree.repositoryName), \(branchLabel), in \(store.editorName(for: item))")
 
             Menu {
@@ -73,13 +60,13 @@ struct WorktreeRowView: View {
                 Button("Open enclosing folder") { store.reveal(item) }
                 Button("Copy folder path") { store.copyPath(item) }
             } label: {
-                Image(systemName: "ellipsis").font(.system(size: 14, weight: .medium)).frame(width: 25, height: 32)
+                Image(systemName: "ellipsis").font(.system(size: 14, weight: .medium)).frame(width: 22, height: 24)
             }
             .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-            .padding(.trailing, 8)
+            .foregroundStyle(.secondary).padding(.trailing, 5)
             .help("Worktree actions").accessibilityLabel("Actions for \(item.worktree.repositoryName)")
         }
-        .background(hovering ? Color.primary.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 9))
+        .background(hovering ? Color.primary.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
         .onHover { hovering = $0 }
     }
 
@@ -87,13 +74,6 @@ struct WorktreeRowView: View {
         item.worktree.branch ?? "Detached · \(String((item.worktree.headRevision ?? "unknown").prefix(7)))"
     }
 
-    private var icon: String {
-        switch store.resolution(for: item).destination {
-        case .finder: "folder"
-        case .missingApp: "exclamationmark.app"
-        case .ide(let ide): ide == .xcode ? "hammer" : "chevron.left.forwardslash.chevron.right"
-        }
-    }
 }
 
 func shortLabel(_ value: String, limit: Int = 30) -> String {

@@ -1,16 +1,19 @@
-# MVP verification
+# Twig verification
 
-Validated locally on 29 September 2026, Apple Silicon macOS 27, Swift 6.4 / Xcode.
+Validated locally on Apple Silicon macOS 27, Swift 6.4 / Xcode. MVP checks were performed on 29 September 2026; the minimal UI and event-driven syncing iteration was checked on 1 October 2026.
 
 ## Automated checks
 
-`./script/test.sh` passes **58 tests in five suites**:
+`./script/test.sh` passes **75 tests in eight suites**:
 
 - 22 project-detection fixtures: project/workspace precedence, editor configuration, JetBrains product inference, Android Gradle content, nested projects, language families, source-only Xcode documents, path aliases/spaces, symlinks, ignored dependencies, deterministic ranking, and scan/read budgets.
 - 14 discovery fixtures: current/detached/unborn HEAD, branch changes, loose/packed refs, relative git pointers, stale worktrees, missing/oversized metadata, symlink boundaries, reference cycles, SHA-256 revisions, and activity ordering.
 - 12 launch-policy fixtures: installed-app filtering, saved overrides, unavailable apps, correct targets, containment, configured fallback priority, generic fallback, and Finder.
 - 7 persistence fixtures: round trips, canonical keys, removing overrides, optional fields, version handling, atomic saves, and preserving corrupted data until explicit recovery.
 - 3 installed-app fixtures: supported bundle IDs, vendor subfolders, preview aliases, root precedence, malformed metadata, depth limits, symlinks, and embedded helper exclusion.
+- 3 scanner-cache fixtures: branch updates without repeated inference, targeted invalidation, new/removed/recreated worktrees, Codex home changes, and manual full refresh.
+- 11 sync-state/routing fixtures: hidden changes remain pending, unchanged openings do no work, changes during a scan remain queued, ignored build/dependency/Git-object paths, linked metadata outside a checkout, topology changes, app inventory, dropped events, and deduplicated roots.
+- 3 real FSEvents fixtures: changing linked Git HEAD emits a correctly routed event, creation of a missing watched root is observed through its parent, and subscriptions can stop and move to another root. These run outside the tool sandbox because it blocks the FSEvents daemon.
 
 Shell scripts pass `bash -n`. Bundle metadata passes `plutil -lint`; the locally ad-hoc-signed bundle passes `codesign --verify --deep --strict`. Development launch is checked with the script’s `--verify` mode.
 
@@ -33,6 +36,8 @@ Verified through native UI automation:
 - Restoring “Automatic” removed the test override and restored the detected `Package.swift` explanation.
 - Settings opened with the active Codex home and the correct fallback value.
 - “Open enclosing folder” opened Finder at the parent directory and selected the exact worktree folder.
+
+For the 1 October iteration, native preview checks confirmed that the initial visibility notification populated the real list, repository/branch rows rendered without app logos or extra labels, search narrowed the list, and the gear and per-worktree menus retained their actions. Cache and hidden-refresh behavior were checked through the scanner and refresh-state tests; menu-only dismissal remains a release smoke check because the automation surface requires the preview window.
 
 The final app was rebuilt in normal menu bar mode after these checks.
 

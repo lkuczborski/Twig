@@ -11,8 +11,10 @@ let package = Package(
     ],
     targets: [
         .target(name: "TwigCore"),
-        .executableTarget(name: "Twig", dependencies: ["TwigCore"]),
+        .target(name: "TwigSync"),
+        .executableTarget(name: "Twig", dependencies: ["TwigCore", "TwigSync"]),
         .executableTarget(name: "TwigInspect", dependencies: ["TwigCore"]),
-        .testTarget(name: "TwigCoreTests", dependencies: ["TwigCore"])
+        .testTarget(name: "TwigCoreTests", dependencies: ["TwigCore"]),
+        .testTarget(name: "TwigSyncTests", dependencies: ["TwigSync"])
     ]
 )

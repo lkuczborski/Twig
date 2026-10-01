@@ -6,13 +6,15 @@ Twig is a native macOS 14+ menu bar utility built with Swift 6, SwiftUI, and a n
 
 | Target / component | Responsibility |
 | --- | --- |
-| `TwigCore/Discovery` | Discover existing Codex checkouts, parse live Git metadata, estimate recent activity. |
+| `TwigCore/Discovery` | Discover existing Codex checkouts, parse live Git metadata, estimate recent activity, cache project inference in a scanner actor. |
+| `TwigSync` | FSEvents lifecycle, directory-event routing, and pending refresh state independent of views. |
 | `TwigCore/Detection` | Scan project structure and bounded snippets; return ranked editor/target candidates with reasons. |
 | `TwigCore/Launching` | Identify installed app bundles and resolve launch policy without launching anything. |
 | `TwigCore/Preferences` | Versioned preferences, canonical worktree keys, atomic JSON persistence. |
 | `Twig` | Menu bar, search, worktree actions, detection details, settings, observable state, and `NSWorkspace` integration. |
 | `TwigInspect` | Read-only JSON diagnostics using the same core discovery, detection, and launch resolution. Never opens an editor or saves settings. |
-| `TwigCoreTests` | Swift Testing fixtures for discovery, detection, installed apps, policy, and persistence. |
+| `TwigCoreTests` | Swift Testing fixtures for discovery, detection, caching, installed apps, policy, and persistence. |
+| `TwigSyncTests` | Refresh-state/routing fixtures and real FSEvents integration tests. |
 
 ```mermaid
 flowchart LR
@@ -34,7 +36,7 @@ The GUI chooses Codex home from its saved setting, then `CODEX_HOME`, then `~/.c
 
 `WorktreeDiscoverer.discover(in:)` returns `WorktreeDiscoveryResult(worktrees:warnings:)`. The supported layout is `<codexHome>/worktrees/<identifier>/<repository>`, with a compatibility path for checkouts directly under `worktrees/<identifier>`. This is a local filesystem convention, not a public Codex API. Other layouts and arbitrary Git repositories are not automatically searched.
 
-A `Worktree` carries its canonical folder path as a stable ID, repository folder name, branch, optional HEAD revision, and activity date. Branch changes do not change the ID. Discovery accepts Git pointer files or `.git` directories, reads the current `HEAD`, follows safe symbolic refs, and checks loose or packed refs. Detached HEAD is represented by a nil branch; unborn branches may have a name but no revision. Reciprocal Git pointers, when present, must refer back to the checkout. Invalid or missing metadata produces a warning instead of stopping the whole scan.
+A `Worktree` carries its canonical folder path as a stable ID, repository folder name, branch, optional HEAD revision, activity date, and resolved Git administrative/common directories for watching. Branch changes do not change the ID. Discovery accepts Git pointer files or `.git` directories, reads the current `HEAD`, follows safe symbolic refs, and checks loose or packed refs. Detached HEAD is represented by a nil branch; unborn branches may have a name but no revision. Reciprocal Git pointers, when present, must refer back to the checkout. Invalid or missing metadata produces a warning instead of stopping the whole scan.
 
 The scanner does not invoke Git. Symlinked checkout groups, checkouts, project children, and Git reference paths are excluded. Git's explicit `gitdir` and `commondir` pointers may refer outside the checkout, as required by linked worktrees. Small metadata reads are capped at 16 KiB; `packed-refs` has an 8 MiB cap. Only existing checkouts appear; archived or deleted worktrees are not reconstructed.
 
@@ -70,9 +72,17 @@ Installed applications are identified by known bundle identifiers through Launch
 
 ## State, persistence, and concurrency
 
-`TwigStore` owns observable UI state on `MainActor`. The `WorktreeScanner` actor serializes worktree discovery and project detection off the main actor. Refreshes are coalesced, cancellation is checked, and results from a Codex home that changed during scanning are discarded. The menu view requests an initial scan and a refresh every 30 seconds during its task lifetime; manual refresh is also available. There is no filesystem watcher or cross-refresh detection cache yet.
+`TwigStore` owns observable UI state on `MainActor`. The `WorktreeScanner` actor serializes discovery and detection off the main actor. It caches project inference by canonical checkout ID, rechecks only invalidated or new checkouts, and prunes removed entries. Git metadata and activity are refreshed on a relevant change; branch-only changes reuse project inference. Manual full refresh and changing Codex home discard inference. Results from a Codex home that changed during scanning are discarded.
 
-Launch Services lookup runs on the main actor; supplementary application-directory scanning runs in a detached utility task. The small preferences file remains synchronous and owned by the main actor. Caching application inventory is a future optimization that does not require changing detection or launch policy.
+### Event-driven syncing
+
+There is no repeating refresh timer. A utility-queue FSEvents stream watches the worktree catalog, each linked checkout's external Git administrative/common directories, and application directories. Missing roots are watched through their closest existing ancestor until creation. Directory notifications are batched by macOS with a one-second latency; a single 250 ms debounce coalesces a delivered burst while content is visible. Common build/dependency events and Git object churn are ignored. A checkout event invalidates that project's inference; an external HEAD/ref event refreshes metadata; catalog changes trigger discovery; app installation/removal invalidates the application catalog.
+
+Changes merge into pending state while hidden, without scheduling scans. An unchanged menu reopening does no work. Opening after a relevant change consumes pending work; clicking a row waits for any active refresh before resolving its current target. A small AppKit window observer measures actual visibility because SwiftUI can retain dismissed menu content. A visible details window also participates. Settings alone does not cause worktree scanning.
+
+Dropped events and moved roots trigger conservative full invalidation and subscription rebuilding. The event ID captured before a scan is used when expanding/replacing subscriptions, so events during the scan are replayed. Sleep stops the stream; wake restarts it and marks data stale, with scanning deferred if hidden. A failed watcher falls back to refreshing on presentation and exposes manual ⌘R. FSEvents are advisory, so manual full refresh remains available.
+
+Launch Services lookup runs on the main actor; supplementary application-directory scanning runs in a detached utility task. The app catalog is cached until a relevant event or explicit refresh. The small preferences file remains synchronous and owned by the main actor.
 
 Preferences are stored at `~/Library/Application Support/Twig/preferences.json`, with schema version 1 and atomic writes. They contain Codex home, fallback editor, per-worktree overrides, and last-open timestamps. Overrides use canonical checkout paths, not repository names or branch names, so sibling worktrees keep independent choices. Selecting a project in details can save its target as well as its IDE. “Automatic” removes that override.
 
@@ -88,7 +98,7 @@ Extend the current layers rather than adding project rules to views:
 - Add project formats in the detector, preserving bounded reads, reasons, deterministic ranking, and target containment.
 - Add future actions through an action model and the platform service boundary; keep scanning side-effect free.
 - Introduce a discovery-source protocol when supporting additional roots or non-Codex worktrees. The current discoverer is intentionally concrete.
-- Add caching/watchers around the scanner, preserving a manual full refresh and the same core result types.
+- Extend event routing or scan caching while preserving hidden-state coalescing, a manual full refresh, and the same core result types.
 - Migrate preference schema explicitly before introducing repository-wide rules or custom applications.
 
-Tests build isolated temporary directory fixtures, so core behavior can be checked without installed IDEs, an active Codex account, a GUI session, or executing Git. GUI launching and platform behavior still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
+Tests build isolated temporary directory fixtures, so core behavior and event routing can be checked without installed IDEs, an active Codex account, a GUI session, or executing Git. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.

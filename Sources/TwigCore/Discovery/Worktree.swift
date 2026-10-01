@@ -11,6 +11,9 @@ public struct Worktree: Identifiable, Hashable, Sendable {
     public let headRevision: String?
     /// The latest observed filesystem or Git activity, not a Codex chat timestamp.
     public let lastActivity: Date
+    /// Linked worktree Git metadata lives outside the checkout and must also be watched.
+    public let gitDirectory: URL?
+    public let commonGitDirectory: URL?
 
     public init(
         id: String,
@@ -18,7 +21,9 @@ public struct Worktree: Identifiable, Hashable, Sendable {
         repositoryName: String,
         branch: String?,
         headRevision: String?,
-        lastActivity: Date
+        lastActivity: Date,
+        gitDirectory: URL? = nil,
+        commonGitDirectory: URL? = nil
     ) {
         self.id = id
         self.folder = folder
@@ -26,6 +31,8 @@ public struct Worktree: Identifiable, Hashable, Sendable {
         self.branch = branch
         self.headRevision = headRevision
         self.lastActivity = lastActivity
+        self.gitDirectory = gitDirectory
+        self.commonGitDirectory = commonGitDirectory
     }
 }
 

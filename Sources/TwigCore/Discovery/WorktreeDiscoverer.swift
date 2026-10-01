@@ -120,7 +120,9 @@ public struct WorktreeDiscoverer: Sendable {
             repositoryName: canonicalFolder.lastPathComponent,
             branch: branch,
             headRevision: revision,
-            lastActivity: lastActivity
+            lastActivity: lastActivity,
+            gitDirectory: gitDirectory,
+            commonGitDirectory: commonDirectory
         )
     }
 

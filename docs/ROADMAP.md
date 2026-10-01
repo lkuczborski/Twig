@@ -4,7 +4,7 @@ The product goal is to make an existing worktree one click away in the right edi
 
 ## 0. Current MVP
 
-The implementation includes a native menu bar list, live Git branch/detached-HEAD labels, activity ordering, search, manual and periodic refresh, configurable Codex home, ranked project/editor detection, installed-app discovery, one-click opening, persistent worktree overrides, project-target selection, Finder actions, path copying, preferences recovery, and read-only JSON diagnostics.
+The implementation includes a compact native menu bar list, live Git branch/detached-HEAD labels, activity ordering, search, event-driven syncing and manual refresh, configurable Codex home, ranked project/editor detection, installed-app discovery, one-click opening, persistent worktree overrides, project-target selection, Finder actions, path copying, preferences recovery, and read-only JSON diagnostics.
 
 The core is separated from UI and application launching, with fixture tests for its discovery, detection, resolution, and persistence behavior. See [ARCHITECTURE.md](ARCHITECTURE.md) for current bounds and limitations; validation results are recorded separately. The local app bundle is a development build, not a notarized release with automatic updates.
 
@@ -23,8 +23,8 @@ Complete this phase with keyboard/VoiceOver checks and clear behavior for remove
 
 ## 2. Scale discovery and preferences
 
-- Cache installed-app inventory, which already scans application directories off the main actor; invalidate on installation/removal or explicit refresh.
-- Add FSEvents-driven invalidation and cached project fingerprints, with debouncing and a manual full-refresh fallback. Measure latency and idle activity against representative large worktree collections.
+- Benchmark event latency, idle CPU/wakeups, and burst behavior against representative large worktree collections. FSEvents, hidden-state coalescing, project-inference caching, and application-catalog caching are already implemented.
+- Refine catalog and activity rescanning if profiling shows a need; preserve dropped-event recovery and manual full refresh.
 - Support multiple Codex homes and explicitly added Git roots through separate discovery sources. Keep unavailable roots visible as actionable status rather than silently removing user configuration.
 - Add repository-wide editor defaults, with an explicit precedence order: worktree choice, repository choice, project inference, global fallback. Let the user choose when a worktree decision should be shared.
 - Offer scan-depth controls and a “scan deeper” action for large monorepos, with progress and cancellation. Keep conservative defaults and make incomplete results visible.

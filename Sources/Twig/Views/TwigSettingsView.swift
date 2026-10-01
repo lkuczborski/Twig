@@ -9,17 +9,6 @@ struct TwigSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
-                HStack {
-                    Image(systemName: "arrow.triangle.branch").font(.largeTitle).foregroundStyle(.green)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Twig").font(.title2.bold())
-                        Text("Your worktrees, one click away.").foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Text("0.1.0").font(.caption).foregroundStyle(.tertiary)
-                }.padding(.vertical, 5)
-            }
             Section("Worktree discovery") {
                 TextField("Codex home", text: $codexPath, prompt: Text("Automatic (~/.codex)"))
                 HStack {
@@ -27,7 +16,7 @@ struct TwigSettingsView: View {
                     Button("Apply") { store.setCodexHome(codexPath) }
                     Button("Use Default") { codexPath = ""; store.setCodexHome("") }
                 }
-                Text("Active folder: \(store.codexHome.path)\nTwig reads its worktrees folder and checks for changes every 30 seconds while open.")
+                Text("Active folder: \(store.codexHome.path)\nChanges sync automatically when needed, with no scheduled polling.")
                     .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
             }
             Section("Opening projects") {
@@ -57,7 +46,7 @@ struct TwigSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 530, height: 550)
+        .frame(width: 500, height: 440)
         .onAppear { codexPath = store.preferences.codexHome ?? "" }
         .task { await store.refreshApplications() }
         .confirmationDialog("Reset unreadable preferences?", isPresented: $confirmRecovery) {
