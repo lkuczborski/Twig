@@ -94,9 +94,14 @@ public final class FileEventWatcher: @unchecked Sendable {
     }
 
     public static func minimalRoots(_ urls: [URL]) -> [URL] {
-        let sorted = Set(urls.filter(\.isFileURL).map {
+        let fileURLs = urls.filter(\.isFileURL)
+        let paths: [String] = fileURLs.map {
             $0.standardizedFileURL.resolvingSymlinksInPath().path
-        }).sorted { $0.count == $1.count ? $0 < $1 : $0.count < $1.count }
+        }
+        let uniquePaths = Set(paths)
+        let sorted = uniquePaths.sorted { left, right in
+            left.count == right.count ? left < right : left.count < right.count
+        }
         var paths: [String] = []
         for path in sorted where !paths.contains(where: { isWithin(path, root: $0) }) { paths.append(path) }
         return paths.map { URL(fileURLWithPath: $0, isDirectory: true) }
