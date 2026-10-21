@@ -110,3 +110,8 @@ Extend the current layers rather than adding project rules to views:
 - Migrate preference schema explicitly before introducing repository-wide rules or custom applications.
 
 Tests build isolated temporary directory fixtures, so core behavior and event routing can be checked without installed IDEs, an active Codex account, a GUI session, or executing Git. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
+
+
+## Distribution
+
+`Support/Info.plist` defines `com.luku.Twig`, version `0.1.0`, build `1`, the icon, and the minimum system version. Both build workflows use `script/bundle.sh` to stage the same metadata, icon, and MIT license. The development workflow ad-hoc signs; `script/release.sh` requires a clean commit, builds both CPU architectures, Developer ID signs with hardened runtime and a secure timestamp, notarizes, staples, and validates the extracted download. Credentials stay in Keychain. The packaging script cannot publish a repository or release; publication follows verification as an independent explicit operation.

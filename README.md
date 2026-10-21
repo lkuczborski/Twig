@@ -1,77 +1,85 @@
-# Twig
+<p align="center">
+  <img src="Resources/AppIcon.png" width="128" height="128" alt="Twig app icon">
+</p>
 
-A native macOS menu bar app for picking up a Codex worktree in the right editor.
+<h1 align="center">Twig</h1>
+<p align="center"><strong>Your worktrees. The right editor. One click.</strong></p>
+<p align="center">A small native macOS menu-bar app for getting back to your Codex projects.</p>
+<p align="center">
+  <a href="https://github.com/lkuczborski/Twig/releases/latest">Download</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="docs/ROADMAP.md">Roadmap</a> ·
+  <a href="LICENSE">MIT License</a>
+</p>
 
-Twig discovers active local Codex worktrees, reads their current Git branches, and ranks launch targets from project files and editor configuration. Click a row to open its suggested project. The actions menu lets you remember an editor, choose a specific detected project, open the folder in Finder, reveal it in its enclosing folder, or copy its path.
+<p align="center">
+  <img src="docs/assets/twig-menu.png" width="360" alt="Twig's menu showing example worktrees and their Git branches">
+  <br><sub>Native SwiftUI, with Liquid Glass on macOS 26. Demonstration repositories shown.</sub>
+</p>
 
-## Run
+## Pick up where you left off
 
-Requires macOS 14 or later and Swift 6 tools (Xcode or compatible Command Line Tools). No third-party dependencies.
+Codex worktrees are useful until you have to hunt through folders to find the right checkout. Twig puts your recent worktrees and their current Git branches in the menu bar, figures out which editor fits each project, and opens the right target when you click.
 
-```sh
-./script/build_and_run.sh
-```
+- **Open the project, not just its folder.** Xcode workspaces, IDE project files, and nested project targets are detected automatically.
+- **Keep the choice yours.** Override an editor or project target for any individual worktree. Every suggestion has an explanation.
+- **Find it quickly.** Search project names, branches, paths, or editors. Press Return to open the first match.
+- **Get to Finder.** Option-click a row to open its folder. More actions let you reveal its enclosing folder or copy its path.
+- **Stay current without polling.** Filesystem events invalidate cached results. Closed menus collect pending changes without rescanning.
+- **Keep it local.** No account, analytics, cloud service, or project-code execution. Twig does not read Codex conversations or credentials.
 
-The same command is wired to the Codex **Run** button. It builds and signs a local development bundle at `dist/Twig.app`, then launches it. Look for the **branch icon in the menu bar**; Twig deliberately has no Dock icon or main window. You can also open `Package.swift` in Xcode.
+## Install
 
-```sh
-./script/build_and_run.sh --build    # Build a local app bundle without launching
-./script/build_and_run.sh --verify   # Build, launch, check the process
-./script/build_and_run.sh --preview  # Development window with the same menu UI
-./script/test.sh                     # Swift Testing fixture suite
-```
+1. [Download Twig v0.1](https://github.com/lkuczborski/Twig/releases/download/v0.1/Twig-v0.1-macos-universal.zip).
+2. Unzip it and move **Twig.app** to **Applications**.
+3. Open Twig and look for the branch symbol in your menu bar.
 
-Optional `--debug`, `--logs`, and `--telemetry` modes are supported by the run script. The toolchain helper honors `DEVELOPER_DIR` and `TWIG_SDK_PATH`; it can use separately installed Command Line Tools when Xcode is not configured. A CLT SDK compatibility fallback is documented in the helper. The app bundle is ad-hoc signed for local development, not notarized for distribution.
+**macOS 14 or later · Apple Silicon and Intel · Developer ID signed and notarized**
 
-## Use
+Twig lives in the menu bar and has no Dock icon. Liquid Glass is available on macOS 26; earlier versions use a native translucent material. [SHA-256 checksum](https://github.com/lkuczborski/Twig/releases/download/v0.1/Twig-v0.1-macos-universal.zip.sha256).
 
-- Search by project, branch, folder path, or selected editor. Return opens the first match.
-- Click a worktree to launch the chosen IDE with the correct project, workspace, manifest, or folder URL.
-- Option-click a worktree to open its folder in Finder.
-- Use **Always open with** to save an installed editor for this worktree. **Automatic** removes the override.
-- Use **Project & detection details** to see the complete branch and path, the reason for each suggestion, and choose a particular nested project.
-- Settings lets you change Codex home and choose a fallback editor. An explicit worktree override takes priority; unavailable overrides produce a helpful error.
-- The compact menu shows only search, repository names, branch names, and action menus. Settings and Quit are in the gear menu.
-- On macOS 26+, the panel uses native SwiftUI Liquid Glass directly over the content behind it. A small AppKit bridge presents a transparent window without an extra frosted backdrop. Search keeps the panel size stable, including when no results match.
-- Filesystem notifications keep the list current. While the menu is closed, Twig records pending changes without scanning; it refreshes when next shown. Unchanged openings reuse cached results. ⌘R forces a full refresh; Settings is ⌘, and Quit is ⌘Q while Twig is focused.
+## How it works
 
-The default discovery root is `$CODEX_HOME/worktrees` when the launching process supplies `CODEX_HOME`, otherwise `~/.codex/worktrees`. Finder-launched apps do not inherit shell startup variables; use Settings for a custom root. Only existing local worktrees are shown, not deleted/archived folders or remote machines.
+Twig discovers existing local checkouts under your Codex home, reads Git metadata for their branch names, and inspects project structure and small configuration snippets to suggest an installed editor. It opens URLs through macOS rather than running project scripts or shell launch commands.
 
-“Recent” means observed source/Git metadata activity or the last successful open from Twig. It does not mean Codex chat activity. Detached HEADs show a commit identifier instead of inventing a branch.
-
-## Project detection
-
-Detection is a suggestion, not proof of your preferred editor. Explicit editor configuration generally outranks language heuristics. Only installed applications are considered, except that an unavailable saved override is preserved and reported.
-
-| Evidence | Suggested editor |
+| Project evidence | Examples of suggested editors |
 | --- | --- |
-| `.xcworkspace`, `.xcodeproj`, `Package.swift`, playgrounds, Apple source | Xcode |
-| `.code-workspace`, `.vscode` | Visual Studio Code |
-| `.idea` plus module SDK, manifest, or product metadata | Corresponding JetBrains IDE |
-| Gradle Android plugin, Android manifest, Flutter/Dart | Android Studio |
-| Maven, Gradle, SBT, Java/Kotlin/Scala, Clojure | IntelliJ IDEA |
-| Python, JavaScript/TypeScript, PHP, Ruby, Go, C/C++, Rust | PyCharm, WebStorm, PhpStorm, RubyMine, GoLand, CLion, RustRover |
-| .NET solutions/projects, Unity, Unreal project | Rider |
-| R projects/packages | RStudio |
-| Cursor, Windsurf, Zed, Sublime, Nova, legacy Fleet configuration | Corresponding editor |
-| Elixir, Haskell, Julia, Terraform, Lua, shell, Zig, SQL, LaTeX, other source | General editor fallback |
+| Xcode projects, workspaces, Swift packages | Xcode |
+| VS Code workspaces and editor metadata | Visual Studio Code, Cursor, Windsurf, Zed |
+| JetBrains metadata and language manifests | IntelliJ IDEA, PyCharm, WebStorm, GoLand, CLion, RustRover, PhpStorm, RubyMine |
+| Android, Flutter, .NET, game projects | Android Studio, Rider |
+| R projects and other source folders | RStudio or an installed general editor |
 
-Multiple candidates remain visible so mixed repositories and monorepos can be overridden. Specialized IDE integration is URL-based; it does not require command-line launchers. Detection reads up to four directory levels with entry/content budgets and skips Git internals, dependencies, build outputs, bundles, and symlinks. No project commands, hooks, or scripts run. Twig never reads Codex conversations or credentials and has no network client.
+A saved worktree choice takes priority over detection. If no suitable installed editor is found, Twig falls back to your chosen editor or Finder. Mixed repositories expose their detected targets in **Project & detection details**.
 
-Preferences live in `~/Library/Application Support/Twig/preferences.json`. They are versioned and written atomically. Unreadable preferences are preserved; Settings offers an explicit recovery action that saves a backup before resetting.
+The default location is `~/.codex/worktrees`, or `$CODEX_HOME/worktrees` when supplied at launch. Choose another Codex home in Settings. Only existing local worktrees appear; archived, deleted, and remote worktrees are not reconstructed. “Recent” means observed filesystem/Git activity or the last successful open through Twig, rather than chat activity.
 
-## Development
+| Shortcut | Action |
+| --- | --- |
+| Return | Open the first search result |
+| Option-click | Open the worktree folder in Finder |
+| ⌘R | Refresh |
+| ⌘, | Settings |
+| Escape | Dismiss Twig |
+| ⌘Q | Quit Twig |
 
-- `Sources/TwigCore`: Foundation-only discovery, detection, resolution, app inventory, persistence.
-- `Sources/TwigSync`: FSEvents subscriptions, change routing, and visibility-aware refresh state.
-- `Sources/Twig`: SwiftUI views, observable app store, and a small AppKit boundary for menu-bar presentation, window visibility, and launching.
-- `Sources/TwigInspect`: read-only JSON diagnostics using the same core logic.
-- `Tests/TwigCoreTests`: temporary fixtures for discovery, inference, caching, launching policy, app inventory, and persistence.
-- `Tests/TwigSyncTests`: event routing, hidden-state coalescing, and real FSEvents integration tests.
+Keyboard shortcuts apply while Twig is focused. Settings and Quit are also in the gear menu.
+
+## Build from source
+
+Requires a Mac and Xcode 26 or newer, or a compatible Swift 6 toolchain with a macOS 26 SDK. No third-party package dependencies.
 
 ```sh
-swift run TwigInspect                  # Inspect local metadata without opening projects
-swift run TwigInspect --codex-home /path/to/codex
+git clone https://github.com/lkuczborski/Twig.git
+cd Twig
+./script/build_and_run.sh
+./script/test.sh
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), and [verification](docs/VERIFICATION.md) for design decisions, remaining work, and what has been validated.
+The build script stages a local development app in `dist/Twig.app`. A separate [release workflow](docs/RELEASING.md) builds both architectures, signs, notarizes, staples, and checks the extracted archive before publication.
+
+Read the [development guide](docs/DEVELOPMENT.md), [architecture](docs/ARCHITECTURE.md), and [verification notes](docs/VERIFICATION.md). The [roadmap](docs/ROADMAP.md) includes keyboard navigation, launch at login, pins, repository grouping, and more editor actions. Ideas and reproducible bug reports are welcome in [Issues](https://github.com/lkuczborski/Twig/issues).
+
+## License
+
+[MIT](LICENSE) · Copyright © 2026 Łukasz Kuczborski.

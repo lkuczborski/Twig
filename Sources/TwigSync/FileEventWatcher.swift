@@ -24,7 +24,7 @@ public enum WatcherError: LocalizedError {
 /// FSEvents batches directory changes rather than waking on a repeating timer.
 /// Stream lifetime is confined to one queue. Callback context is immutable and retained by CoreServices.
 public final class FileEventWatcher: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "dev.twig.filesystem", qos: .utility)
+    private let queue = DispatchQueue(label: "com.luku.Twig.filesystem", qos: .utility)
     private var stream: FSEventStreamRef?
 
     public init() {}

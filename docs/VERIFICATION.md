@@ -53,4 +53,4 @@ Repeated full-list, matching `Beatly`, and no-results `sfs` searches retained id
 
 Xcode is the only supported IDE installed on this test machine. Other editors' detection, bundle matching, and launch decisions have fixture coverage; their actual installed applications were not launched. Menu-bar placement and search were checked on this display, but multiple displays, VoiceOver, older macOS versions, and Intel hardware still need release testing. Project-target detail actions and preference recovery have code/core coverage but were not exhaustively exercised through every UI path.
 
-This is a local development MVP, not a notarized distribution release. Heuristics cannot prove a user's preferred editor; use the per-worktree override for ambiguous repositories. Recency is filesystem/Git activity plus successful opens, not Codex chat recency.
+v0.1 distribution validation is recorded below; local development builds remain ad-hoc signed. Heuristics cannot prove a user's preferred editor; use the per-worktree override for ambiguous repositories. Recency is filesystem/Git activity plus successful opens, not Codex chat recency.

@@ -6,7 +6,7 @@ The product goal is to make an existing worktree one click away in the right edi
 
 The implementation includes a compact native menu bar list, live Git branch/detached-HEAD labels, activity ordering, search, event-driven syncing and manual refresh, configurable Codex home, ranked project/editor detection, installed-app discovery, one-click opening, persistent worktree overrides, project-target selection, Finder actions, path copying, preferences recovery, and read-only JSON diagnostics.
 
-The core is separated from UI and application launching, with fixture tests for its discovery, detection, resolution, and persistence behavior. See [ARCHITECTURE.md](ARCHITECTURE.md) for current bounds and limitations; validation results are recorded separately. The local app bundle is a development build, not a notarized release with automatic updates.
+The core is separated from UI and application launching, with fixture tests for its discovery, detection, resolution, and persistence behavior. See [ARCHITECTURE.md](ARCHITECTURE.md) for current bounds and limitations; validation results are recorded separately. The v0.1 distribution is Developer ID signed and notarized; automatic updates remain future work. Local builds use ad-hoc signing.
 
 ## 1. Make daily use faster
 
@@ -43,7 +43,7 @@ Complete this phase with graceful offline behavior and a clear distinction betwe
 
 ## 4. Release and lifecycle management
 
-- Developer ID signing, notarization, reproducible release packaging, and signed updates before broad distribution.
+- Developer ID signing, notarization, and verified universal packaging are part of v0.1. Add a signed automatic-update channel as a separate delivery step.
 - A diagnostics export that defaults to removing identifying paths and branch names, plus explicit user review before sharing.
 - Worktree cleanup only after reliable ownership and activity checks exist. Start with a review screen that shows the exact checkout, dirty/untracked state, active use, and recovery path. Favor Codex-managed archival where supported; never silently delete worktrees.
 - Versioned detection rules and regression fixtures for new IDEs and project formats, with an explanation when a rule changes the automatic editor choice.
