@@ -4,7 +4,7 @@ The app identifier is `com.luku.Twig`. `Support/Info.plist` is the shared source
 
 ## Prerequisites
 
-- Xcode 26 or newer with macOS tooling, and an unlocked Keychain.
+- Xcode 27.1 selected through `xcode-select` or `DEVELOPER_DIR`, and an unlocked Keychain.
 - A valid **Developer ID Application** signing identity.
 - An authenticated `notarytool` Keychain profile for the same Apple developer team.
 - A clean, committed checkout and the checked-in logo exports.
@@ -21,7 +21,7 @@ Update `CFBundleShortVersionString` and `CFBundleVersion` in `Support/Info.plist
   --notary-profile "your-keychain-profile"
 ```
 
-The script runs the release tests, builds a universal `arm64`/`x86_64` executable, stages `Twig.app` with its icon and MIT license, enables hardened runtime, and signs with a secure timestamp. It submits a ZIP to Apple's notary service, saves the result and log under ignored `dist/release/v0.1/`, staples the accepted ticket, and checks Gatekeeper acceptance. It then recreates the ZIP so the download includes the stapled ticket, writes a SHA-256 checksum, extracts it into a temporary directory, and checks its signature, staple, and Gatekeeper acceptance again.
+The script checks for Xcode 27.1, runs the release tests, builds a universal `arm64`/`x86_64` executable, stages `Twig.app` with its icon and MIT license, enables hardened runtime, and signs with a secure timestamp. It submits a ZIP to Apple's notary service, saves the result and log under ignored `dist/release/v0.1/`, staples the accepted ticket, and checks Gatekeeper acceptance. It then recreates the ZIP so the download includes the stapled ticket, writes a SHA-256 checksum, extracts it into a temporary directory, and checks its signature, staple, and Gatekeeper acceptance again.
 
 Output:
 

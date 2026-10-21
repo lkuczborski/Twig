@@ -6,7 +6,7 @@ Twig discovers active local Codex worktrees, reads their current Git branches, a
 
 ## Run
 
-Requires macOS 14 or later and Swift 6 tools (Xcode or compatible Command Line Tools). No third-party dependencies.
+Builds and releases use Xcode 27.1. The deployment target remains macOS 14. No third-party dependencies.
 
 ```sh
 ./script/build_and_run.sh

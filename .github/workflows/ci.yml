@@ -10,12 +10,18 @@ concurrency:
   cancel-in-progress: true
 jobs:
   macos:
-    runs-on: macos-26
+    runs-on: xcode-27
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+      - name: Verify Xcode 27.1
+        run: |
+          xcodebuild -version
+          test "$(xcodebuild -version | head -n 1)" = "Xcode 27.1"
       - name: Test
         run: ./script/test.sh
       - name: Build development bundle

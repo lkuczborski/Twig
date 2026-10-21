@@ -67,7 +67,7 @@ Keyboard shortcuts apply while Twig is focused. Settings and Quit are also in th
 
 ## Build from source
 
-Requires a Mac and Xcode 26 or newer, or a compatible Swift 6 toolchain with a macOS 26 SDK. No third-party package dependencies.
+Build and release with **Xcode 27.1**. CI selects this version explicitly. The app still runs on macOS 14 or later, and has no third-party package dependencies.
 
 ```sh
 git clone https://github.com/lkuczborski/Twig.git

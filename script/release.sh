@@ -8,7 +8,7 @@ Usage: script/release.sh <tag> --signing-identity <identity> --notary-profile <p
 Build a universal Twig.app, Developer ID sign, notarize, staple, and verify it.
 <tag> must match Support/Info.plist (v0.1 also matches bundle version 0.1.0).
 Identity/profile can also be supplied as TWIG_SIGNING_IDENTITY/TWIG_NOTARY_PROFILE.
-Requires a clean Git checkout. Does not publish or modify Git tags.
+Requires Xcode 27.1 and a clean Git checkout. Does not publish or modify Git tags.
 EOF
 }
 die() { echo "error: $*" >&2; exit 1; }
@@ -31,6 +31,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 source "$ROOT_DIR/script/toolchain.sh"
 source "$ROOT_DIR/script/bundle.sh"
+XCODE_VERSION="$(xcodebuild -version | /usr/bin/awk '/^Xcode / { print $2 }')"
+[[ "$XCODE_VERSION" == 27.1 ]] || die "select Xcode 27.1 before releasing (found $XCODE_VERSION)"
+echo "Release toolchain: Xcode $XCODE_VERSION"
 [[ -z "$(git status --porcelain)" ]] || die "commit changes before releasing"
 PLIST_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Support/Info.plist)"
 TAG_VERSION="${VERSION#v}"
