@@ -95,10 +95,10 @@ public final class FileEventWatcher: @unchecked Sendable {
 
     public static func minimalRoots(_ urls: [URL]) -> [URL] {
         let fileURLs = urls.filter(\.isFileURL)
-        let paths: [String] = fileURLs.map {
+        let canonicalPaths: [String] = fileURLs.map {
             $0.standardizedFileURL.resolvingSymlinksInPath().path
         }
-        let uniquePaths = Set(paths)
+        let uniquePaths = Set(canonicalPaths)
         let sorted = uniquePaths.sorted { left, right in
             left.count == right.count ? left < right : left.count < right.count
         }
