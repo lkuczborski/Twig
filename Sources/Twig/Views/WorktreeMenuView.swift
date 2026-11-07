@@ -80,23 +80,19 @@ struct WorktreeMenuView: View {
     }
 
     private var content: some View {
-        let byID = Dictionary(uniqueKeysWithValues: store.filteredItems.map { ($0.id, $0) })
-        return ScrollViewReader { proxy in
+        ScrollViewReader { proxy in
             ScrollView {
-            LazyVStack(spacing: 1) {
-                ForEach(store.worktreeSections) { section in
-                    if let title = section.title {
-                        sectionHeader(title, section: section)
-                    }
-                    ForEach(section.worktrees) { worktree in
-                        if let item = byID[worktree.id] {
+                LazyVStack(spacing: 1) {
+                    ForEach(menuEntries) { entry in
+                        if let item = entry.item {
                             WorktreeRowView(item: item, store: store, showDetails: showDetails,
-                                            isRepositoryGroup: section.isRepositoryGroup)
-                                .id(section.isRepositoryGroup).id(item.id)
+                                            isRepositoryGroup: entry.section.isRepositoryGroup)
+                                .id(item.id)
+                        } else if let title = entry.section.title {
+                            sectionHeader(title, section: entry.section)
                         }
                     }
-                }
-            }.padding(5)
+                }.padding(5)
             }
             .onChange(of: store.highlightedID) { _, id in
                 if let id { proxy.scrollTo(id) }
@@ -107,6 +103,18 @@ struct WorktreeMenuView: View {
         .frame(height: contentHeight)
         .overlay {
             if store.filteredItems.isEmpty { emptyState }
+        }
+    }
+
+    // One flat sequence gives every lazy row a stable, unique identity when it
+    // moves between pinned, repository, and search-result sections.
+    private var menuEntries: [WorktreeMenuEntry] {
+        let byID = Dictionary(uniqueKeysWithValues: store.filteredItems.map { ($0.id, $0) })
+        return store.worktreeSections.flatMap { section in
+            let header = section.title == nil ? [] : [WorktreeMenuEntry(id: "header:\(section.id)", section: section, item: nil)]
+            return header + section.worktrees.compactMap { worktree in
+                byID[worktree.id].map { WorktreeMenuEntry(id: $0.id, section: section, item: $0) }
+            }
         }
     }
 
@@ -184,6 +192,12 @@ struct WorktreeMenuView: View {
                 .buttonStyle(.plain).accessibilityLabel("Dismiss error")
         }.padding(10).background(.orange.opacity(0.08))
     }
+}
+
+private struct WorktreeMenuEntry: Identifiable {
+    let id: String
+    let section: WorktreeSection
+    let item: ScannedWorktree?
 }
 
 struct MenuPresentationActions {

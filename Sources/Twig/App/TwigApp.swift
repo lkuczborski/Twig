@@ -57,6 +57,16 @@ final class TwigAppDelegate: NSObject, NSApplicationDelegate {
         }
         editItem.submenu = editMenu
         menu.addItem(editItem)
+
+        let windowItem = NSMenuItem()
+        let windowMenu = NSMenu(title: "Window")
+        windowMenu.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        windowMenu.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
+        windowMenu.addItem(.separator())
+        windowMenu.addItem(withTitle: "Bring All to Front", action: #selector(NSApplication.arrangeInFront(_:)), keyEquivalent: "")
+        windowItem.submenu = windowMenu
+        menu.addItem(windowItem)
+        NSApp.windowsMenu = windowMenu
         NSApp.mainMenu = menu
     }
 
