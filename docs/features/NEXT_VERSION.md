@@ -55,7 +55,7 @@ The following checks were observed in the actual running combined preview:
 - The normal build read existing preferences, discovered 22 real worktrees, and scrolled its full welcome list. Existing editor choices and open history were retained.
 - **Add Repository…** used the native folder picker. Adding the sample Atlas root found its four checkouts and merged linked checkouts already present through Codex discovery.
 
-These checks use synthetic repositories and isolated Twig preferences. The original internal capture gallery is retained locally under ignored `dist/feature-previews`. The public 35-second intro uses clean native window captures with CleanShot framing; its sanitized Remotion source is versioned in [`media/intro`](../../media/intro) and the MP4 is attached to v0.2. Per-feature notes are linked above.
+Captures use synthetic repositories and isolated Twig preferences; the normal-build check used saved preferences and real worktrees. The original internal capture gallery is retained locally under ignored `dist/feature-previews`. The public 35-second intro uses clean native window captures with CleanShot framing; its sanitized Remotion source is versioned in [`media/intro`](../../media/intro) and the MP4 is attached to v0.2. Per-feature notes are linked above.
 
 ## Combined regression result
 
