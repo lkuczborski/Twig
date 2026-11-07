@@ -1,5 +1,11 @@
 # Twig verification
 
+## Unreleased menu-bar selection — 7 November 2026
+
+The status button now uses persistent AppKit selection instead of a momentary mouse highlight. It stays selected while the worktree panel is visible or Twig is active with an open Settings, Welcome, details, or preview window. It clears when those windows are closed, minimized, or inactive and the panel is hidden.
+
+The combined preview build compiled and native window checks confirmed selection on activation, selection retained across Settings and preview windows, clearing on app inactivity, and clearing after closing the last window while the app remained active. These transitions were checked through the preview's runtime state log; the rendered menu-bar background was not visually reverified. The normal build then compiled and passed launch verification with the user's real discovery settings. Multiple displays and older macOS versions remain untested.
+
 ## Unreleased worktree details — 7 November 2026
 
 The development implementation adds project type, successful-open age, destination-editor icons, and local Git change/conflict/ahead/behind indicators to the existing two-line rows. It remains **unreleased**; the public v0.2 app and its download are unchanged. See the [feature record](features/WORKTREE_DETAILS.md) for behavior and limits.
