@@ -1,6 +1,6 @@
 # Next-version preview
 
-This manifest describes local development work reviewed on **7 November 2026**. **Twig v0.1 remains the published stable release.** The combined preview is on `codex/next-preview`; no new release has been published, uploaded, notarized, or installed over the stable distribution as part of this work.
+This manifest describes local development work reviewed on **7 November 2026**. **Twig v0.1 remains the published stable release.** The five feature worktrees were integrated on `codex/next-preview` for merging into `main`. A local Developer ID signed build was installed at `/Applications/Twig.app` and opened with saved preferences and real worktrees. No new release has been published, uploaded, or notarized.
 
 ## Feature branches and worktrees
 
@@ -13,7 +13,7 @@ This manifest describes local development work reviewed on **7 November 2026**. 
 | Git repositories | `codex/git-repositories` | `twig-git-repositories/Twig` | [Additional roots and linked checkouts](git-repositories.md) |
 | Combined preview | `codex/next-preview` | `twig-next-preview/Twig` | All features plus integration fixes and the capture harness |
 
-Worktree paths in the table are relative to the local managed worktree directory. The original `main` checkout remains separate. These are local branches; the table does not imply that they have been pushed to GitHub.
+Worktree paths in the table are relative to the local managed worktree directory. The original `main` checkout is the final build location. These are local branches; the table does not imply that they have been pushed to GitHub.
 
 ## Run the native preview
 
@@ -51,19 +51,21 @@ The following checks were observed in the actual running combined preview:
 - Setting the repository editor to Xcode changed the launch explanation to “Your editor choice for this repository.”
 - Open once with Xcode opened the exact Atlas `feature/instant-search` checkout and its `Package.swift`. The resulting preferences retained empty worktree overrides and repository-editor choices.
 - Completing Welcome saved its completion flag and opened the actual menu-bar panel. Final search, selection, and action-menu captures also use that panel, without the preview-window title bar.
+- Installed signed-app login registration changed macOS status to enabled; unregister returned it to disabled. The original off setting was restored. The initial not-found state no longer incorrectly tells users to move an already-installed app.
+- The normal build read existing preferences, discovered 22 real worktrees, and scrolled its full welcome list. Existing editor choices and open history were retained.
 - **Add Repository…** used the native folder picker. Adding the sample Atlas root found its four checkouts and merged linked checkouts already present through Codex discovery.
 
 These checks use synthetic repositories and isolated Twig preferences. Native screenshots and an 18-second walkthrough assembled from those captured app states are saved in the original checkout's ignored `dist/feature-previews` directory. The gallery is `index.html` and the video is `Twig-next-preview.mp4`; per-feature notes are linked above.
 
 ## Combined regression result
 
-The final combined regression run passed **124 tests**: **104 core tests in 11 suites** and **20 sync tests in two suites**, including the real FSEvents fixtures. This includes the follow-up bare-repository and missing-linked-checkout restoration fixes. Counts are from the combined run, not the sum of feature-branch reports.
+The final combined regression run (after the login guidance correction, outside the tool sandbox for FSEvents access) passed **124 tests**: **104 core tests in 11 suites** and **20 sync tests in two suites**, including the real FSEvents fixtures. This includes the follow-up bare-repository and missing-linked-checkout restoration fixes. Counts are from the combined run, not the sum of feature-branch reports.
 
 ## Validation limits
 
 - Global shortcut registration reported no error, and the user verified hardware invocation from another app. Targeted UI-automation key injection alone did not activate the Carbon hotkey; it is not the evidence for that confirmation.
-- Terminal accepted URL dispatch. The UI tool refused inspection of Terminal, so its actual resulting working directory has not been verified. Core tests cover directory validation and paths containing spaces, quotes, shell characters, Unicode, newlines, and symlinks.
-- Login registration was not toggled for screenshots. The ad-hoc preview reported that Twig should be moved to Applications. Installed signed-app registration, approval, launch at sign-in, and unregister behavior remain unverified.
+- Terminal’s actual working directory was verified through read-only process metadata: both descendant shells had the exact sample checkout as cwd; Git confirmed `fix/sidebar-keyboard-navigation`, and the saved open timestamp matched Terminal startup. No Terminal UI inspection was used. Special-character directory handling has core fixture coverage; live dispatch used an ordinary fixture path.
+- Installed Developer ID signed-app registration and removal passed. macOS enabled the item immediately, so an approval-required state was not exercised. A full logout/reboot was not performed during this active session.
 - VoiceOver, multiple displays, older supported macOS versions, Intel hardware, universal release packaging, and notarization remain separate validation work.
 
 Automatic updates, remote CI/PR status, and worktree cleanup are not implemented. This preview performs no release publishing.

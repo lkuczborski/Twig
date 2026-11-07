@@ -1,5 +1,9 @@
 # Twig verification
 
+## Final next-version checks — 7 November 2026
+
+All 124 tests passed again (104 core and 20 sync), with real FSEvents tests run outside the tool sandbox. Terminal’s descendant shells had the exact fixture checkout as their working directory, corroborated by Git metadata and saved open time. A Developer ID signed build installed in Applications registered and unregistered launch at login successfully; the original off state was restored. A full sign-out/reboot and an approval-required state were not exercised. The normal build discovered 22 real worktrees with existing preferences; welcome overflow scrolled correctly. See [the next-version manifest](features/NEXT_VERSION.md) for details.
+
 The next-version preview was checked on **7 November 2026**: **124 tests pass** (104 core and 20 sync, including real FSEvents), and the combined native demo builds and runs. Keyboard navigation, exact Finder/Xcode opening, label/pin persistence, repository defaults, additional Git roots, and the scrollable welcome were exercised in the running app. The user confirmed the global shortcut from another app. See [the preview verification record](features/NEXT_VERSION.md) for branch details, captures, and the remaining installed-app login-item and Terminal working-directory checks. The historical v0.1 verification follows.
 
 Validated locally on Apple Silicon macOS 27, Swift 6.4 / Xcode. MVP checks were performed on 29 September 2026; the minimal UI and event-driven syncing iteration was checked on 1 October 2026.

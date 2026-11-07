@@ -40,7 +40,7 @@ Twig lives in the menu bar and has no Dock icon. Liquid Glass is available on ma
 
 ## Next-version preview
 
-The local **`codex/next-preview`** branch combines five feature worktrees. These features are implemented in the development preview; **v0.1 remains the published download**. No next-version release has been published.
+The development version on **`main`** combines five feature worktrees, integrated on `codex/next-preview`. **v0.1 remains the published download**; these changes have not been released.
 
 - **Move through work by keyboard.** Configurable **Control–Shift–T** opens Twig. Fuzzy search, arrow-key selection, Return, and a previous-worktree action complete the keyboard workflow. Paths use literal matching so unrelated directory prefixes do not crowd the results.
 - **Recognize the right checkout.** Pin active worktrees, group siblings by repository, and add personal labels. Long branch names keep their distinctive endings through middle truncation.
@@ -56,7 +56,7 @@ The local **`codex/next-preview`** branch combines five feature worktrees. These
 | ⇧⌘Return | Reopen the previous successfully opened worktree |
 | Escape | Dismiss Twig |
 
-From the combined preview checkout, run the native app with invented repositories and separate demo preferences:
+From a development checkout, run the native app with invented repositories and separate demo preferences:
 
 ```sh
 ./script/build_and_run.sh --demo          # Menu preview with sample worktrees
@@ -65,7 +65,7 @@ From the combined preview checkout, run the native app with invented repositorie
 
 Each command creates fresh Git fixtures under `dist/demos/`; the sample content contains no personal projects or conversations. The demo uses real installed editors and real macOS login-item controls. Normal `./script/build_and_run.sh` uses your saved Twig preferences. Preview builds are locally ad-hoc signed.
 
-See the [preview manifest and validation limits](docs/features/NEXT_VERSION.md) for feature branches, observed UI checks, and the remaining Terminal-directory, login-item, and release checks. The user has confirmed that Control–Shift–T opens the preview from another application.
+See the [preview manifest and validation limits](docs/features/NEXT_VERSION.md) for feature branches, observed UI checks, and release validation limits. Terminal’s working directory and installed login-item registration/removal were verified locally. The user has confirmed that Control–Shift–T opens the preview from another application.
 
 ## How it works
 
