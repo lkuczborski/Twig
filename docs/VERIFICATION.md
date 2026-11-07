@@ -1,5 +1,13 @@
 # Twig verification
 
+## Unreleased date sections and simpler menu — 7 November 2026
+
+Activity now groups the effective activity dates into Today, earlier weekdays in the current calendar week, Last week, Earlier this month where applicable, and older month headings. Pins remain separate, Project keeps alphabetical repository groups, and search remains flat and relevance-ranked. Section labels use stronger text and separator lines. Sorting moved to Settings → Worktree list, and the permanent keyboard-hint footer was removed; keyboard handlers remain in place.
+
+The complete regression run passed **171 tests: 148 core and 23 sync**, including 12 calendar-grouping tests. Coverage includes local midnight, configurable week starts, time-zone differences, both Warsaw daylight-saving transitions, weeks crossing month/year boundaries, effective-date overrides, future/unknown dates, pins/deduplication, stable localized section IDs, and unchanged Project/search behavior. Calendar, time-zone, clock, and locale notifications refresh headings without polling, with show/wake refreshes as backstops.
+
+The `--demo-activity` preview built and launched with isolated preferences and five real Git worktrees. Native inspection confirmed Today (two worktrees), Thursday, Last week, and October, stronger section headings, and the absence of the header sort control and keyboard footer. All five rows fit in the inspected preview. Source, checkout, Git administrative, and current-branch-reference timestamps are backdated consistently with the saved open history. The Settings sort control compiled; its native interaction was left for later after the user took control to capture the preview. The debug app remains separate from the user's real discovery preferences.
+
 ## Unreleased Activity / Project sorting — 7 November 2026
 
 The menu header now exposes a saved Activity / Project switch. Activity preserves global recent-first order after pins; Project includes every repository in natural alphabetical order, preserving recent-first order inside each project. Search keeps relevance ranking and temporarily disables the switch. Legacy grouping preferences migrate to the equivalent view, and new preferences default to Activity.
