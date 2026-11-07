@@ -9,10 +9,13 @@ public struct WorktreeSection: Identifiable, Sendable, Equatable {
 }
 
 public enum WorktreeOrganization {
-    /// Pins occur once at the top in supplied activity order. Project sorting uses
-    /// shared Git metadata, so unrelated repositories with the same name stay separate.
+    /// Pins occur once at the top in supplied activity order. A non-nil activity
+    /// date map enables calendar sections; nil keeps relevance-ranked results flat.
+    /// Project sorting uses shared Git metadata and ignores activity date sections.
     public static func sections(
-        _ worktrees: [Worktree], pinnedIDs: Set<String>, sortOrder: WorktreeSortOrder
+        _ worktrees: [Worktree], pinnedIDs: Set<String>, sortOrder: WorktreeSortOrder,
+        activityDates: [String: Date]? = nil, now: Date = Date(),
+        calendar: Calendar = .current, locale: Locale = .current
     ) -> [WorktreeSection] {
         var seen: Set<String> = []
         let unique = worktrees.filter { seen.insert($0.id).inserted }
@@ -23,7 +26,11 @@ public enum WorktreeOrganization {
             sections.append(WorktreeSection(id: "pinned", title: "Pinned", isRepositoryGroup: false, worktrees: pinned))
         }
         guard sortOrder == .project else {
-            if !remaining.isEmpty {
+            if let activityDates {
+                sections.append(contentsOf: WorktreeActivityGrouping.sections(
+                    remaining, activityDates: activityDates, now: now, calendar: calendar, locale: locale
+                ))
+            } else if !remaining.isEmpty {
                 sections.append(WorktreeSection(id: "recent", title: pinned.isEmpty ? nil : "Recent", isRepositoryGroup: false, worktrees: remaining))
             }
             return sections
