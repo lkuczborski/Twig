@@ -35,10 +35,14 @@ struct ChangeRoutingTests {
         #expect(router.classify([FilesystemEvent(path: tree.commonGitDirectory!.appendingPathComponent("objects/ab").path)]).isEmpty)
     }
 
-    @Test func dependencyAndBuildEventsDoNotTriggerWork() {
-        for relative in ["node_modules/package", ".build/debug", "build/tmp", ".git/objects", "dist/assets", "Pods/Foo"] {
-            #expect(router.classify([FilesystemEvent(path: tree.folder.appendingPathComponent(relative).path)]).isEmpty)
+    @Test func dependencyAndBuildEventsOnlyRefreshGitStatusWithoutProjectDetection() {
+        for relative in ["node_modules/package", ".build/debug", "build/tmp", "dist/assets", "Pods/Foo"] {
+            let request = router.classify([FilesystemEvent(path: tree.folder.appendingPathComponent(relative).path)])
+            #expect(!request.worktrees)
+            #expect(request.projectIDs.isEmpty)
+            #expect(request.gitStatusIDs == ["one"])
         }
+        #expect(router.classify([FilesystemEvent(path: tree.folder.appendingPathComponent(".git/objects").path)]).isEmpty)
     }
 
     @Test func topologyChangesAndMissingRootCreationForceDiscovery() {
@@ -46,6 +50,8 @@ struct ChangeRoutingTests {
             let request = router.classify([FilesystemEvent(path: path)])
             #expect(request.worktrees && request.allProjects)
         }
+        let coalesced = router.classify([FilesystemEvent(path: root.path)])
+        #expect(coalesced.gitStatusIDs == ["one"])
     }
 
     @Test func applicationEventsInvalidateOnlyTheCatalog() {
@@ -117,7 +123,8 @@ struct ChangeRoutingTests {
         #expect(changed.worktrees)
         #expect(changed.projectIDs == ["outside"])
         #expect(!changed.allProjects)
-        #expect(routing.classify([FilesystemEvent(path: folder.appendingPathComponent("node_modules/package").path)]).isEmpty)
+        let dependency = routing.classify([FilesystemEvent(path: folder.appendingPathComponent("node_modules/package").path)])
+        #expect(!dependency.worktrees && dependency.gitStatusIDs == ["outside"])
         let removed = routing.classify([FilesystemEvent(path: folder.deletingLastPathComponent().path)])
         #expect(removed.worktrees && removed.reconfigureWatcher)
     }
@@ -180,5 +187,56 @@ struct ChangeRoutingTests {
         let request = routing.classify([FilesystemEvent(path: missing.path)])
         #expect(request.worktrees && request.reconfigureWatcher)
         #expect(!request.applications)
+    }
+
+    @Test func indexAndUpstreamRefEventsRefreshAffectedSiblingsOnly() {
+        let sibling = WatchedWorktree(id: "two", folder: URL(fileURLWithPath: "/tmp/other-checkout"),
+            gitDirectory: tree.commonGitDirectory!.appendingPathComponent("worktrees/other"),
+            commonGitDirectory: tree.commonGitDirectory)
+        let unrelated = WatchedWorktree(id: "three", folder: URL(fileURLWithPath: "/tmp/unrelated"),
+            gitDirectory: URL(fileURLWithPath: "/tmp/unrelated/.git"))
+        let routing = ChangeRouting(worktreesRoot: root, worktrees: [tree, sibling, unrelated], applicationDirectories: [])
+        let refChange = routing.classify([FilesystemEvent(path: tree.commonGitDirectory!.appendingPathComponent("refs/remotes/origin/main").path)])
+        #expect(refChange.gitStatusIDs == ["one", "two"])
+        #expect(!refChange.allProjects)
+        let sourceChange = routing.classify([FilesystemEvent(path: sibling.folder.appendingPathComponent("file.txt").path)])
+        #expect(sourceChange.gitStatusIDs == ["two"])
+        let indexChange = routing.classify([FilesystemEvent(path: sibling.gitDirectory!.appendingPathComponent("index").path)])
+        #expect(indexChange.gitStatusIDs == ["two"])
+        #expect(!indexChange.allGitStatuses)
+        #expect(!indexChange.reconfigureWatcher)
+        let coalesced = routing.classify([FilesystemEvent(path: sibling.gitDirectory!.path)])
+        #expect(coalesced.gitStatusIDs == ["two"])
+        #expect(!coalesced.allGitStatuses)
+        #expect(!coalesced.reconfigureWatcher)
+        let registry = routing.classify([FilesystemEvent(path: tree.commonGitDirectory!.appendingPathComponent("worktrees").path)])
+        #expect(registry.gitStatusIDs == ["one", "two"])
+        #expect(!registry.allGitStatuses)
+    }
+
+    @Test func excludeAndAttributeRulesRefreshGitStatus() {
+        for suffix in ["info", "info/exclude", "info/attributes"] {
+            let request = router.classify([FilesystemEvent(path: tree.commonGitDirectory!.appendingPathComponent(suffix).path)])
+            #expect(request.gitStatusIDs == ["one"])
+            #expect(!request.allProjects)
+        }
+    }
+
+    @Test func statusOnlyRequestsCoalesceWhileHiddenAndSurviveInFlightReads() {
+        var state = RefreshState()
+        _ = state.takePending(allowWhileHidden: true)
+        var first = RefreshRequest()
+        first.gitStatusIDs = ["one"]
+        var second = RefreshRequest()
+        second.gitStatusIDs = ["two"]
+        state.invalidate(first)
+        state.invalidate(second)
+        #expect(!state.pending.isEmpty)
+        #expect(state.takePending() == nil)
+        state.isVisible = true
+        #expect(state.takePending()?.gitStatusIDs == ["one", "two"])
+        state.invalidate(first)
+        #expect(state.takePending()?.gitStatusIDs == ["one"])
+        #expect(state.takePending() == nil)
     }
 }

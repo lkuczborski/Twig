@@ -24,6 +24,9 @@ final class TwigStore {
     @ObservationIgnored var onGlobalShortcutChange: ((GlobalShortcut?) -> String?)?
     private let scanner = WorktreeScanner()
     private let workspace = WorkspaceService()
+    @ObservationIgnored private let gitStatusStore = WorktreeGitStatusStore()
+    private var editorIcons: [IDEID: NSImage] = [:]
+    private var finderIcon: NSImage?
     private let persistence: FilePreferencesStore
     @ObservationIgnored private var syncState = RefreshState()
     @ObservationIgnored private let watcher = FileEventWatcher()
@@ -183,9 +186,24 @@ final class TwigStore {
         }
     }
 
+    func editorIcon(for item: ScannedWorktree) -> NSImage? {
+        switch resolution(for: item).destination {
+        case .ide(let ide): editorIcons[ide]
+        case .finder: finderIcon
+        case .missingApp: nil
+        }
+    }
+
+    func gitStatus(for item: ScannedWorktree) -> GitStatusResult? {
+        gitStatusStore.results[item.id]
+    }
+
     func refreshApplications() async {
         await workspace.refreshApplications()
         installed = Set(workspace.applications.keys)
+        editorIcons = workspace.applications.mapValues { NSWorkspace.shared.icon(forFile: $0.path) }
+        finderIcon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.finder")
+            .map { NSWorkspace.shared.icon(forFile: $0.path) }
         hasApplicationCatalog = true
     }
 
@@ -193,6 +211,7 @@ final class TwigStore {
         if isVisible { visibleSurfaces.insert(surface) }
         else { visibleSurfaces.remove(surface) }
         syncState.isVisible = !visibleSurfaces.isEmpty
+        gitStatusStore.setVisible(syncState.isVisible)
         if isVisible {
             // A failed watcher falls back to checking on presentation, never a timer.
             if !isWatching { syncState.invalidate(.full); configureWatcher() }
@@ -237,11 +256,13 @@ final class TwigStore {
                 if Task.isCancelled { syncState.invalidate(request); return }
                 if codexHome != root || repositoryRoots != explicitRoots { syncState.invalidate(.full); continue }
                 items = snapshot.items
+                gitStatusStore.update(items)
                 reconcileHighlight()
                 warnings = snapshot.warnings
                 repositoryStatuses = snapshot.repositoryStatuses
                 lastRefreshed = Date()
             }
+            gitStatusStore.invalidate(ids: request.gitStatusIDs, all: request.allGitStatuses)
             configureWatcher(force: request.reconfigureWatcher, since: baseline)
         }
     }
@@ -295,6 +316,7 @@ final class TwigStore {
     }
 
     private func didWake() {
+        gitStatusStore.setVisible(syncState.isVisible)
         syncState.invalidate(.full)
         configureWatcher(force: true)
         scheduleIfVisible()
@@ -302,6 +324,7 @@ final class TwigStore {
 
     private func willSleep() {
         debounceTask?.cancel()
+        gitStatusStore.setVisible(false)
         watcher.stop()
         watchedPaths = []
         isWatching = false

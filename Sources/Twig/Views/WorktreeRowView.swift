@@ -10,6 +10,13 @@ struct WorktreeRowView: View {
     @State private var hovering = false
 
     var body: some View {
+        let resolution = store.resolution(for: item)
+        let projectType = WorktreePresentation.projectType(detection: item.detection, resolution: resolution)
+        let lastOpened = store.preferences.lastOpenedDate(for: item.worktree.folder)
+        let opened = WorktreePresentation.lastOpenedLabel(lastOpened)
+        let git = WorktreeGitSummary(store.gitStatus(for: item))
+        let metadataDescription = [projectType, lastOpened.map { "Last opened \($0.formatted(date: .abbreviated, time: .shortened))" }, git.description]
+            .compactMap { $0 }.joined(separator: "\n")
         HStack(spacing: 5) {
             Button {
                 // Read modifiers synchronously; the key may be released before an async task starts.
@@ -24,22 +31,21 @@ struct WorktreeRowView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(rowTitle)
                             .font(.system(size: 13, weight: .medium)).lineLimit(1).truncationMode(.middle)
-                        if !isRepositoryGroup || store.label(for: item) != nil {
-                            Text(secondaryLabel)
-                                .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
-                                .lineLimit(1).truncationMode(.middle)
-                        }
+                        WorktreeMetadataView(identity: secondaryIdentity, projectType: projectType,
+                                             opened: opened, git: git)
                     }
                     Spacer(minLength: 0)
-                    if store.openingID == item.id { ProgressView().controlSize(.mini) }
+                    editorIndicator(resolution.destination)
                 }
                 .padding(.vertical, 8).padding(.leading, 8)
                 .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Open in \(store.editorName(for: item))\nOption-click to open folder in Finder\n\(branchLabel)\n\(item.worktree.folder.path)\n\(store.resolution(for: item).reason)")
+            .help("\(launchDescription(resolution.destination))\n\(branchLabel)\n\(metadataDescription)\n\(item.worktree.folder.path)\n\(resolution.reason)\nOption-click to open folder in Finder")
+            .accessibilityElement(children: .ignore)
             .accessibilityLabel("Open \(store.displayTitle(for: item)), \(item.worktree.repositoryName), \(branchLabel), in \(store.editorName(for: item))")
+            .accessibilityValue(metadataDescription)
 
             Menu {
                 WorktreeOpeningActions(item: item, store: store)
@@ -83,9 +89,36 @@ struct WorktreeRowView: View {
         store.label(for: item) ?? (isRepositoryGroup ? branchLabel : item.worktree.repositoryName)
     }
 
-    private var secondaryLabel: String {
-        store.label(for: item) != nil && !isRepositoryGroup
+    private var secondaryIdentity: String? {
+        guard !isRepositoryGroup || store.label(for: item) != nil else { return nil }
+        return store.label(for: item) != nil && !isRepositoryGroup
             ? "\(item.worktree.repositoryName) · \(branchLabel)" : branchLabel
+    }
+
+    private func launchDescription(_ destination: LaunchDestination) -> String {
+        switch destination {
+        case .ide(let ide): "Open in \(ide.displayName)"
+        case .missingApp(let ide): "\(ide.displayName) is unavailable"
+        case .finder: "Open in Finder"
+        }
+    }
+
+    private func editorIndicator(_ destination: LaunchDestination) -> some View {
+        ZStack {
+            if store.openingID == item.id {
+                ProgressView().controlSize(.mini)
+            } else if case .missingApp = destination {
+                Image(systemName: "exclamationmark.square").foregroundStyle(.orange)
+            } else if let icon = store.editorIcon(for: item) {
+                Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
+            } else {
+                Image(systemName: destination == .finder ? "folder" : "app.dashed")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 20, height: 20)
+        .help(launchDescription(destination))
+        .accessibilityHidden(true)
     }
 
 }

@@ -20,20 +20,25 @@ public struct RefreshRequest: Sendable, Equatable {
     public var projectIDs: Set<String> = []
     public var applications = false
     public var reconfigureWatcher = false
+    public var allGitStatuses = false
+    public var gitStatusIDs: Set<String> = []
 
     public init() {}
     public static var full: Self {
         var value = Self()
         value.worktrees = true; value.allProjects = true; value.applications = true
+        value.allGitStatuses = true
         return value
     }
-    public var isEmpty: Bool { !worktrees && !applications && !reconfigureWatcher }
+    public var isEmpty: Bool { !worktrees && !applications && !reconfigureWatcher && !allGitStatuses && gitStatusIDs.isEmpty }
     public mutating func merge(_ other: Self) {
         worktrees = worktrees || other.worktrees
         allProjects = allProjects || other.allProjects
         projectIDs.formUnion(other.projectIDs)
         applications = applications || other.applications
         reconfigureWatcher = reconfigureWatcher || other.reconfigureWatcher
+        allGitStatuses = allGitStatuses || other.allGitStatuses
+        gitStatusIDs.formUnion(other.gitStatusIDs)
     }
 }
 
@@ -99,6 +104,9 @@ public struct ChangeRouting: Sendable {
             for tree in matches {
                 let folder = canonicalPath(tree.folder.path)
                 let components = String(path.dropFirst(folder.count)).split(separator: "/").map(String.init)
+                // A normally ignored build/dependency directory can contain tracked files.
+                // Let Git apply the checkout's own ignore rules without rerunning project detection.
+                if components.first != ".git" { result.gitStatusIDs.insert(tree.id) }
                 guard !components.contains(where: Self.ignoredDirectories.contains) else { continue }
                 result.worktrees = true
                 result.projectIDs.insert(tree.id)
@@ -106,6 +114,7 @@ public struct ChangeRouting: Sendable {
             for tree in worktrees where isWithin(canonicalPath(tree.folder.path), root: path) && path != canonicalPath(tree.folder.path) {
                 result.worktrees = true
                 result.allProjects = true
+                result.gitStatusIDs.insert(tree.id)
                 result.reconfigureWatcher = true
             }
             if (isWithin(path, root: root) && matches.isEmpty) || isWithin(root, root: path) {
@@ -128,13 +137,24 @@ public struct ChangeRouting: Sendable {
             }
             for metadata in metadataRoots where isWithin(path, root: metadata) {
                 let components = String(path.dropFirst(metadata.count)).split(separator: "/").map(String.init)
-                if components.isEmpty || ["HEAD", "index", "packed-refs", "refs", "logs", "commondir", "gitdir", "config"].contains(components.first ?? "") {
+                if components.isEmpty || ["HEAD", "index", "packed-refs", "refs", "logs", "commondir", "gitdir", "config", "info"].contains(components.first ?? "") {
                     result.worktrees = true
+                    for tree in worktrees where [tree.gitDirectory, tree.commonGitDirectory].compactMap({ $0 }).contains(where: { canonicalPath($0.path) == metadata }) {
+                        result.gitStatusIDs.insert(tree.id)
+                    }
                 } else if components.first == "worktrees" {
-                    // A new registered checkout may live anywhere on disk. Follow its
-                    // reciprocal pointer on the next scan and rebuild subscriptions.
                     result.worktrees = true
-                    result.reconfigureWatcher = true
+                    let affected = worktrees.filter { tree in
+                        guard let gitDirectory = tree.gitDirectory else { return false }
+                        let directory = canonicalPath(gitDirectory.path)
+                        return isWithin(path, root: directory) || isWithin(directory, root: path)
+                    }
+                    result.gitStatusIDs.formUnion(affected.map(\.id))
+                    // Index/log events for a known registration do not invalidate every
+                    // repository. An unknown registration may introduce a new external root.
+                    if affected.isEmpty || components.count == 1 {
+                        result.reconfigureWatcher = true
+                    }
                 }
             }
         }

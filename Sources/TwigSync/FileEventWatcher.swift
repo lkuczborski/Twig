@@ -117,7 +117,7 @@ private let filesystemCallback: FSEventStreamCallback = { _, info, count, paths,
     guard let info else { return }
     let callback = Unmanaged<WatcherCallback>.fromOpaque(info).takeUnretainedValue()
     let array = Unmanaged<CFArray>.fromOpaque(paths).takeUnretainedValue() as NSArray
-    let rescanMask = UInt32(kFSEventStreamEventFlagUserDropped
+    let rescanMask = UInt32(kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagUserDropped
         | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged
         | kFSEventStreamEventFlagEventIdsWrapped | kFSEventStreamEventFlagMount | kFSEventStreamEventFlagUnmount)
     var events: [FilesystemEvent] = []

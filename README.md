@@ -30,6 +30,10 @@ Press **Control–Shift–T**, type a few letters, and open the worktree you nee
 
 Twig still opens the project itself—including Xcode workspaces and nested project targets—rather than making you find it inside a folder. Every automatic suggestion has an explanation and can be overridden.
 
+## In development
+
+Worktree details are implemented on the development branch and are **not included in the v0.2 download**. They keep two-line rows and branch identity while adding project type, the last successful open through Twig, the destination editor's icon, and local Git change/conflict/ahead/behind indicators. Upstream counts use existing local refs; Twig does not fetch. Automated and native preview checks are recorded in the [feature notes](docs/features/WORKTREE_DETAILS.md), including remaining validation limits.
+
 ## Install
 
 1. [Download Twig v0.2](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip).
@@ -78,7 +82,7 @@ A saved worktree choice takes priority, followed by a repository editor choice, 
 
 Codex discovery uses `~/.codex/worktrees`, or `$CODEX_HOME/worktrees` when supplied at launch. Choose another Codex home in Settings, or use **Add Repository…** for other local repositories. Only existing local checkouts appear; archived, deleted, and remote worktrees are not reconstructed. “Recent” means observed filesystem/Git activity or the last successful open through Twig, rather than chat activity.
 
-Filesystem events invalidate cached results. Closed menus collect pending changes without rescanning, and unchanged openings reuse cached results. Manual refresh remains available.
+Filesystem events invalidate cached results. When Twig's views are hidden, changes wait without rescanning; unchanged openings reuse cached results. Manual refresh remains available.
 
 **Local. Private. Yours.** No account, analytics, or cloud service. Twig does not read Codex conversations or credentials. Pins, labels, editor choices, and discovery sources are saved locally; labels do not rename Git branches or folders.
 
@@ -100,6 +104,7 @@ To explore the actual interface using invented repositories and separate demo pr
 ```sh
 ./script/build_and_run.sh --demo          # Menu with sample worktrees
 ./script/build_and_run.sh --demo-welcome  # Include the welcome window
+./script/build_and_run.sh --demo-details  # Development details with real local Git states
 ```
 
 Each demo creates fresh Git fixtures under `dist/demos/`; it does not copy personal projects or conversations. Demo mode still uses real installed editors and real macOS login-item controls.

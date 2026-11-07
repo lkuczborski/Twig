@@ -1,6 +1,6 @@
 # Twig roadmap
 
-Twig helps you return to the right local worktree in the right editor, with understandable and overridable choices. **v0.2 is the current release.** The implemented features below are available now; future items are proposals, not delivery commitments.
+Twig helps you return to the right local worktree in the right editor, with understandable and overridable choices. **v0.2 is the current release.** Its shipped features are listed separately from development work and future proposals; future items are not delivery commitments.
 
 ## Available in v0.2
 
@@ -16,6 +16,14 @@ The v0.1 foundation remains: live branch and detached-HEAD labels, activity orde
 
 The release is packaged for Apple Silicon and Intel, Developer ID signed, and notarized. Local development builds use ad-hoc signing. Native demo modes provide invented repositories and separate preferences for screenshots and review. See the [release notes](RELEASE_NOTES_v0.2.md), [architecture](ARCHITECTURE.md), and [verification notes](VERIFICATION.md) for details.
 
+## Implemented in development: worktree details
+
+The development implementation adds project type, successful-open age, and a destination-editor icon while preserving two-line rows and branch identity. Local Git indicators report changed files, conflicts, and ahead/behind counts against locally known upstream refs, without fetching.
+
+Status reads run independently from discovery, with at most four concurrent checkouts and a default two-second / 1 MiB budget per checkout. Filesystem events invalidate results; work is cancelled when all Twig views are hidden. Unsupported or failed status reads remain unavailable rather than implying a clean worktree.
+
+The combined build, automated regressions, and native preview checks have passed with the limits recorded in the [feature notes](features/WORKTREE_DETAILS.md) and [verification record](VERIFICATION.md). These details remain **unreleased** and are not in the v0.2 download. Full VoiceOver navigation, Intel hardware, older supported macOS versions, and filtered-repository UI checks remain outside the completed verification.
+
 ## Improve daily use
 
 - Support custom application bundles for editors outside the built-in catalog. Open-once currently lists supported installed editors.
@@ -29,7 +37,7 @@ Broaden validation across VoiceOver, input methods, multiple displays, older sup
 
 ## Optional context and integrations
 
-- Local Git health indicators such as uncommitted changes, ahead/behind state, and last commit. Keep expensive checks off the UI path; any Git subprocesses need argument arrays, timeouts, and read-only scope.
+- Last-commit context, beyond the local changed-file/conflict/ahead/behind indicators currently in development. Keep any additional reads bounded and off the UI path.
 - Pull-request links and CI state through an optional authenticated provider, with explicit network use and refresh cadence.
 - Optional Codex chat association and **Open chat** through a supported integration, without requiring conversation-text indexing.
 - Explicit repository actions that show what will run and where. Discovery must never execute detected project configuration automatically.

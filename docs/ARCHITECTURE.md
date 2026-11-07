@@ -1,6 +1,6 @@
 # Twig architecture
 
-Twig is a native macOS 14+ menu bar utility built with Swift 6, SwiftUI, and a narrow AppKit launch boundary. The MVP has no third-party package dependencies or network service. Discovery suggests a compatible editor from local evidence; it cannot establish which editor a person actually prefers without a saved choice.
+Twig is a native macOS 14+ menu bar utility built with Swift 6, SwiftUI, and a narrow AppKit launch boundary. The app has no third-party package dependencies or network service. Discovery suggests a compatible editor from local evidence; it cannot establish which editor a person actually prefers without a saved choice.
 
 ## Targets and responsibilities
 
@@ -11,6 +11,9 @@ Twig is a native macOS 14+ menu bar utility built with Swift 6, SwiftUI, and a n
 | `TwigCore/Detection` | Scan project structure and bounded snippets; return ranked editor/target candidates with reasons. |
 | `TwigCore/Launching` | Identify installed app bundles and resolve launch policy without launching anything. |
 | `TwigCore/Preferences` | Versioned preferences, canonical worktree keys, atomic JSON persistence. |
+| `TwigCore/Presentation/WorktreePresentation.swift` | Development work: project-type and successful-open-age descriptions derived from existing detection and preferences. |
+| `TwigCore/Git/GitStatusReader.swift`, `GitStatusParser.swift`, `BoundedGitProcess.swift` | Development work: bounded local read-only Git status, parsed independently of discovery. |
+| `Twig/Services/WorktreeGitStatusStore.swift` | Development work: observable status cache, bounded parallel reads, event invalidation, and visibility cancellation. |
 | `Twig` | Menu bar, search, worktree actions, detection details, settings, observable state, and `NSWorkspace` integration. |
 | `TwigInspect` | Read-only JSON diagnostics using the same core discovery, detection, and launch resolution. Never opens an editor or saves settings. |
 | `TwigCoreTests` | Swift Testing fixtures for discovery, detection, caching, installed apps, policy, and persistence. |
@@ -50,6 +53,8 @@ The scanner does not invoke Git. Symlinked checkout groups, checkouts, project c
 
 Only modification times are read from `logs/HEAD` and `codex-thread.json`. The UI orders worktrees by the later of this activity date and the last successful open through Twig, with canonical path as a stable tie-breaker. This is not Codex conversation recency. Deep source edits beyond the scan bounds may not affect order until Git metadata changes. File timestamps can also reflect checkout or build activity.
 
+The worktree-details implementation uses a separate **last opened** label from `TwigPreferences.lastOpenedDate(for:)`. That value records a successful project open through Twig, including open-once actions. It is not inferred from `lastActivity`, file modification times, Git commits, or Codex chats. Checkouts without a saved successful open have no age label.
+
 ## Project detection and launch policy
 
 `ProjectDetector.detect(at:)` returns a `ProjectDetection` containing candidates, the examined file count, and a truncation flag. A `ProjectCandidate` holds an `IDEID`, launch target, project kind, evidence reason, and relative confidence score. Scores rank evidence; they are not probabilities about a user's preference.
@@ -86,7 +91,7 @@ Worktree button actions capture modifier flags synchronously. Option-click opens
 
 There is no repeating refresh timer. A utility-queue FSEvents stream watches the worktree catalog, each linked checkout's external Git administrative/common directories, and application directories. Missing roots are watched through their closest existing ancestor until creation. Directory notifications are batched by macOS with a one-second latency; a single 250 ms debounce coalesces a delivered burst while content is visible. Common build/dependency events and Git object churn are ignored. A checkout event invalidates that project's inference; an external HEAD/ref event refreshes metadata; catalog changes trigger discovery; app installation/removal invalidates the application catalog.
 
-Changes merge into pending state while hidden, without scheduling scans. An unchanged menu reopening does no work. Opening after a relevant change consumes pending work; clicking a row waits for any active refresh before resolving its current target. A small AppKit window observer measures actual visibility because SwiftUI can retain dismissed menu content. A visible details window also participates. Settings alone does not cause worktree scanning.
+Changes merge into pending state while Twig's views are hidden, without scheduling scans. An unchanged menu reopening does no work. Opening after a relevant change consumes pending work; clicking a row waits for any active refresh before resolving its current target. Small AppKit window observers measure actual visibility because SwiftUI can retain dismissed content. Visible details, repository Settings, and welcome surfaces also participate so their checkout context stays current.
 
 Dropped events and moved roots trigger conservative full invalidation and subscription rebuilding. The event ID captured before a scan is used when expanding/replacing subscriptions, so events during the scan are replayed. Sleep stops the stream; wake restarts it and marks data stale, with scanning deferred if hidden. A failed watcher falls back to refreshing on presentation and exposes manual ⌘R. FSEvents are advisory, so manual full refresh remains available.
 
@@ -95,6 +100,20 @@ Launch Services lookup runs on the main actor; supplementary application-directo
 Preferences are stored at `~/Library/Application Support/Twig/preferences.json`, with schema version 1 and atomic writes. They contain Codex home, fallback editor, per-worktree overrides, and last-open timestamps. Overrides use canonical checkout paths, not repository names or branch names, so sibling worktrees keep independent choices. Selecting a project in details can save its target as well as its IDE. “Automatic” removes that override.
 
 Unknown schema versions or unreadable preferences block ordinary saves to preserve existing data. The GUI offers explicit backup-and-reset recovery. `PreferencesPersisting` is the existing injection boundary for alternative storage; `TwigStore` currently uses `FilePreferencesStore` directly.
+
+## Worktree details in development
+
+This section describes the implemented development feature. Automated and native preview checks are recorded in [VERIFICATION.md](VERIFICATION.md), with their practical limits. The feature remains unreleased and is not part of v0.2.
+
+`WorktreePresentation` derives a useful project type for the resolved launch target and formats saved successful-open times. `WorktreeRowView` and `WorktreeMetadataView` retain two-line rows and branch identity, fitting secondary context into the available width. The destination icon comes from the installed application's metadata; unavailable editors and Finder have explicit fallback presentation. Tooltips and accessibility descriptions retain context that does not fit inline.
+
+`GitStatusReader` in `Sources/TwigCore/Git/GitStatusReader.swift` obtains changed-file and conflict counts plus ahead/behind counts against the locally known upstream. `GitStatusParser.swift` interprets the machine-readable output; `BoundedGitProcess.swift` owns process execution and its limits. These reads use local Git with argument arrays, never a shell or fetch. The default aggregate budget is two seconds and 1 MiB of command output per checkout read, including configuration, tracked-file, attribute, and status commands. Positive finite timeout overrides are accepted only up to 60 seconds. Errors, cancellation, unsupported filtered-file comparisons, and budget exhaustion produce unavailable status, not a zero-change result.
+
+Status inspection disables repository filter commands, hooks, filesystem-monitor commands, optional locks, and transports, and does not execute project code. Tracked filter attributes that would affect comparison make status unavailable; unused filter configuration alone does not. Nested submodule uncommitted/untracked contents are excluded; a changed gitlink commit still counts. Ahead/behind values describe existing local refs and can be stale relative to a remote until another tool fetches.
+
+`Sources/Twig/Services/WorktreeGitStatusStore.swift` owns status results separately from discovery and editor inference, so status does not block the worktree list. It schedules at most four checkout reads concurrently, caches results by canonical checkout ID, invalidates them on relevant filesystem/Git changes, and drops obsolete in-flight results. When all Twig views are hidden, active work is cancelled and pending changes are retained for the next presentation. There is no idle polling timer. Manual refresh remains available; unavailable results are retried when Twig is presented again.
+
+Status invalidation includes Git exclude and attribute metadata, scopes known linked-worktree index events to the relevant checkout, and conservatively refreshes after `MustScanSubDirs` or ancestor notifications. These paths have automated routing coverage; the verification record distinguishes the native checks performed from fixture coverage.
 
 ## Privacy and extension boundaries
 
@@ -109,9 +128,9 @@ Extend the current layers rather than adding project rules to views:
 - Extend event routing or scan caching while preserving hidden-state coalescing, a manual full refresh, and the same core result types.
 - Migrate preference schema explicitly before introducing repository-wide rules or custom applications.
 
-Tests build isolated temporary directory fixtures, so core behavior and event routing can be checked without installed IDEs, an active Codex account, a GUI session, or executing Git. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
+Discovery, detection, launch-policy, and persistence tests use isolated directory fixtures and do not need installed IDEs, an active Codex account, a GUI session, or Git execution. Development status tests additionally create isolated Git repositories to exercise actual status behavior. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
 
 
 ## Distribution
 
-`Support/Info.plist` defines `com.luku.Twig`, version `0.1.0`, build `1`, the icon, and the minimum system version. Both build workflows use `script/bundle.sh` to stage the same metadata, icon, and MIT license. The development workflow ad-hoc signs; `script/release.sh` requires a clean commit, builds both CPU architectures, Developer ID signs with hardened runtime and a secure timestamp, notarizes, staples, and validates the extracted download. Credentials stay in Keychain. The packaging script cannot publish a repository or release; publication follows verification as an independent explicit operation.
+`Support/Info.plist` defines `com.luku.Twig`, the version and build numbers, the icon, and the minimum system version. Both build workflows use `script/bundle.sh` to stage the same metadata, icon, and MIT license. The development workflow ad-hoc signs; `script/release.sh` requires a clean commit, builds both CPU architectures, Developer ID signs with hardened runtime and a secure timestamp, notarizes, staples, and validates the extracted download. Credentials stay in Keychain. The packaging script cannot publish a repository or release; publication follows verification as an independent explicit operation.

@@ -18,10 +18,15 @@ The same command is wired to the Codex **Run** button. It builds and signs a loc
 ./script/build_and_run.sh --build    # Build a local app bundle without launching
 ./script/build_and_run.sh --verify   # Build, launch, check the process
 ./script/build_and_run.sh --preview  # Development window with the same menu UI
+./script/build_and_run.sh --demo-details # Isolated fixtures for unreleased row details
 ./script/test.sh                     # Swift Testing fixture suite
 ```
 
 Optional `--debug`, `--logs`, and `--telemetry` modes are supported by the run script. The toolchain helper honors `DEVELOPER_DIR` and `TWIG_SDK_PATH`; it can use separately installed Command Line Tools when Xcode is not configured. A CLT SDK compatibility fallback is documented in the helper. The development app bundle is ad-hoc signed. Distribution builds use the separate Developer ID signing and notarization workflow in [RELEASING.md](RELEASING.md).
+
+`--demo-details` creates fresh repositories and separate Twig preferences under `dist/demos`, then opens the native preview. Its real Git fixtures include a clean Swift package, modified and untracked files, a local upstream with an ahead commit, and an unresolved merge conflict with ahead/behind counts. Saved successful-open ages range from recent to a day ago, and Website has no open history. No network or personal projects/preferences are used. The [feature notes](features/WORKTREE_DETAILS.md) describe the exact cases and completed checks. This implementation remains unreleased; the public v0.2 download is unchanged.
+
+The generator stores Foundation-compatible canonical preference keys, including macOS temporary aliases such as `/private/tmp` → `/tmp`. This keeps pins, labels, and open history attached to their discovered checkout IDs even when the development worktree lives under a temporary directory.
 
 ## Use
 
@@ -32,13 +37,15 @@ Optional `--debug`, `--logs`, and `--telemetry` modes are supported by the run s
 - Pin worktrees, add personal labels, and group by repository. Use **Add Repository…** to include local checkout or bare-repository roots alongside Codex. Welcome and optional launch at login are available in Settings.
 - Use **Project & detection details** to see the complete branch and path, the reason for each suggestion, and choose a particular nested project.
 - Settings lets you change Codex home and choose a fallback editor. An explicit worktree override takes priority; unavailable overrides produce a helpful error.
-- The compact menu shows only search, repository names, branch names, and action menus. Settings and Quit are in the gear menu.
+- The compact menu keeps two lines per worktree and preserves branch identity. Development work adds project type, successful-open age, editor icons, and local Git status within that layout. Settings and Quit are in the gear menu.
 - On macOS 26+, the panel uses native SwiftUI Liquid Glass directly over the content behind it. A small AppKit bridge presents a transparent window without an extra frosted backdrop. Search keeps the panel size stable, including when no results match.
-- Filesystem notifications keep the list current. While the menu is closed, Twig records pending changes without scanning; it refreshes when next shown. Unchanged openings reuse cached results. ⌘R forces a full refresh; Settings is ⌘, and Quit is ⌘Q while Twig is focused.
+- Filesystem notifications keep the list current. While all Twig views are hidden, Twig records pending changes without scanning; it refreshes when next shown. Unchanged openings reuse cached results. ⌘R forces a full refresh; Settings is ⌘, and Quit is ⌘Q while Twig is focused.
 
 The default discovery root is `$CODEX_HOME/worktrees` when the launching process supplies `CODEX_HOME`, otherwise `~/.codex/worktrees`. Finder-launched apps do not inherit shell startup variables; use Settings for a custom root. Only existing local worktrees are shown, not deleted/archived folders or remote machines.
 
 “Recent” means observed source/Git metadata activity or the last successful open from Twig. It does not mean Codex chat activity. Detached HEADs show a commit identifier instead of inventing a branch.
+
+The development **Opened … ago** label uses only a recorded successful project open through Twig, including open-once editor actions. Filesystem activity still contributes to ordering but never manufactures an open-history label. No age appears for a worktree that Twig has not successfully opened. Local Git ahead/behind values compare locally known refs; status never fetches and does not imply up-to-date remote state.
 
 ## Project detection
 
@@ -63,9 +70,10 @@ Preferences live in `~/Library/Application Support/Twig/preferences.json`. They 
 
 ## Development
 
-- `Sources/TwigCore`: Foundation-only discovery, detection, resolution, app inventory, persistence.
+- `Sources/TwigCore`: Foundation-only discovery, detection, resolution, app inventory, persistence, and development presentation/status helpers. `Git/` contains the bounded read-only Git status reader and parser.
 - `Sources/TwigSync`: FSEvents subscriptions, change routing, and visibility-aware refresh state.
 - `Sources/Twig`: SwiftUI views, observable app store, and a small AppKit boundary for menu-bar presentation, window visibility, and launching.
+- `Sources/Twig/Services/WorktreeGitStatusStore.swift`: development status cache and scheduling, independent from discovery; at most four reads with a default two-second / 1 MiB budget per checkout, cancelled when all Twig views are hidden.
 - `Sources/TwigInspect`: read-only JSON diagnostics using the same core logic.
 - `Tests/TwigCoreTests`: temporary fixtures for discovery, inference, caching, launching policy, app inventory, and persistence.
 - `Tests/TwigSyncTests`: event routing, hidden-state coalescing, and real FSEvents integration tests.

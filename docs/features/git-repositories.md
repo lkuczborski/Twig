@@ -1,6 +1,6 @@
 # Regular Git repositories
 
-**Add Repository…** is available in the gear menu, empty state, and Settings. Choose a main checkout, a linked worktree, or a bare repository. Twig reads Git's administrative metadata to find existing local checkouts; it never invokes Git, a shell, or repository code.
+**Add Repository…** is available in the gear menu, empty state, and Settings. Choose a main checkout, a linked worktree, or a bare repository. Repository discovery reads Git's administrative metadata directly and never invokes Git, a shell, or repository code. The separate worktree-status feature in development uses bounded, local read-only Git commands for change/conflict/ahead/behind indicators; it does not fetch or run project code. Those status indicators are not included in v0.2.
 
 Selecting a normal checkout discovers the main checkout and all extant registered linked worktrees. Selecting a linked worktree follows its common-directory pointer to discover the same set. Bare repositories expose their linked checkouts, with no fabricated main worktree, including when the bare directory is literally named `.git` or its parent is selected. A bounded read of the local `core.bare` setting distinguishes that layout; config includes and commands are not evaluated. Relative `.git`, `commondir`, and reciprocal `gitdir` pointers are resolved from their correct locations. Stale and misdirected registrations are skipped with warnings. Pointer reads are bounded and reject symlinked metadata files.
 

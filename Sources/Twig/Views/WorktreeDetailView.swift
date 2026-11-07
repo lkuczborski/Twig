@@ -19,6 +19,21 @@ struct WorktreeDetailView: View {
                             Text(item.worktree.folder.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                         }
                         WorktreeOrganizationControls(item: item, store: store)
+                        GroupBox("Worktree activity") {
+                            let projectType = WorktreePresentation.projectType(detection: item.detection,
+                                                                               resolution: store.resolution(for: item))
+                            let opened = store.preferences.lastOpenedDate(for: item.worktree.folder)
+                            let git = WorktreeGitSummary(store.gitStatus(for: item))
+                            VStack(alignment: .leading, spacing: 8) {
+                                if let projectType { LabeledContent("Project", value: projectType) }
+                                LabeledContent("Last opened", value: opened.map {
+                                    $0.formatted(date: .abbreviated, time: .shortened)
+                                } ?? "Not opened through Twig")
+                                Text(git.description).font(.callout)
+                                    .foregroundStyle(git.hasConflicts ? Color.red : Color.secondary)
+                                    .textSelection(.enabled)
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(6)
+                        }
                         GroupBox("Click to open") {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {

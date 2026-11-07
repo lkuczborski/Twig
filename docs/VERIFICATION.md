@@ -1,5 +1,24 @@
 # Twig verification
 
+## Unreleased worktree details — 7 November 2026
+
+The development implementation adds project type, successful-open age, destination-editor icons, and local Git change/conflict/ahead/behind indicators to the existing two-line rows. It remains **unreleased**; the public v0.2 app and its download are unchanged. See the [feature record](features/WORKTREE_DETAILS.md) for behavior and limits.
+
+The combined development build passed. An initial complete run passed **152 tests: 130 core, including 16 Git tests, and 22 sync**. A transport-denial test and an `info/exclude` routing test were then added; focused reruns passed **17 Git tests, 20 routing tests, and 3 real FSEvents tests**. Together, those runs cover the final **154-test inventory: 131 core and 23 sync**. This records a complete baseline plus targeted followups, not a single final 154-test run.
+
+Native preview checks used disposable repositories with real Git state and separate preferences. Verified:
+
+- Two changed files, one commit ahead, and one conflicted file with one commit ahead/one behind, matching Git's results for the corresponding fixtures.
+- Swift and JS / TS project types, Xcode and Finder destination icons, saved successful-open ages, pins and labels, and preserved branch identity.
+- Search and Down-arrow selection, plus exact open dates and all Git counts in the details view.
+- Adding an untracked `LiveRefresh.md` file updated the visible changed-file count from **2 to 3** through the filesystem watcher. Adding that file to the common `.git/info/exclude` changed the count from **3 to 2** automatically, without manual refresh.
+
+Independent review identified and corrected invalidation for `info/exclude` and attributes, the scope of known linked-worktree index events, and conservative status refresh for `MustScanSubDirs` and ancestor events. Automated routing coverage passed; the native file-addition and `info/exclude` checks also confirmed automatic status updates.
+
+The demo generator now matches Foundation's canonical spelling of macOS temporary aliases such as `/private/tmp` → `/tmp`, so saved pin, label, and last-opened keys match discovered checkout IDs. The corrected keys were checked directly with Foundation; ordinary `/Users` paths remain unchanged.
+
+The default reader budget is two seconds and 1 MiB across a checkout's commands, with at most four checkout reads running concurrently. Positive finite timeout overrides are bounded at 60 seconds. Core tests cover the status reader's local-only process boundaries; a filtered-repository unavailable state was not exercised through the UI. Full VoiceOver navigation, Intel hardware, and older supported macOS releases were not tested for this feature.
+
 ## v0.2 distribution — 7 November 2026
 
 The v0.2 archive contains **Twig 0.2.0, build 2**, built in release configuration with **Xcode 27.2** for both **arm64 and x86_64**. The release pipeline runs the 124-test suite, signs with Developer ID and hardened runtime, obtains Apple's notarization approval, staples the ticket, and checks Gatekeeper acceptance both before and after extracting the final ZIP. The downloadable ZIP and SHA-256 checksum are attached to [v0.2](https://github.com/lkuczborski/Twig/releases/tag/v0.2).
