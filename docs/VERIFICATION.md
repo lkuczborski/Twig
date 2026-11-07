@@ -1,5 +1,17 @@
 # Twig verification
 
+## Unreleased Activity / Project sorting — 7 November 2026
+
+The menu header now exposes a saved Activity / Project switch. Activity preserves global recent-first order after pins; Project includes every repository in natural alphabetical order, preserving recent-first order inside each project. Search keeps relevance ranking and temporarily disables the switch. Legacy grouping preferences migrate to the equivalent view, and new preferences default to Activity.
+
+The complete regression run passed **159 tests: 136 core and 23 sync**, including real FSEvents tests. Sorting coverage checks interleaved activity across repositories, natural project-name order, distinct repositories with the same name, singleton and pinned sections, canonical aliases, search-rank preservation, and preference migration/round trips/unknown-value fallback.
+
+Native checks with disposable real repositories confirmed both views, preserved selection across a mode change, arrow navigation in the new visible order, flat search results, and restoration of Project view after clearing the query. The selected mode was saved to preferences. Creating `ActivityCheck.swift` in the third unpinned checkout moved that checkout to the first Recent position automatically and updated its changed-file indicator.
+
+The real worktree list was switched to Activity through the native control, and the saved preference was verified. The normal menu-bar build then compiled and passed launch verification with those real preferences.
+
+Activity remains a bounded estimate from source/Git metadata timestamps and successful Twig opens. Deep or hidden source edits beyond the discovery scan bounds may not change order until Git metadata changes or the worktree is opened through Twig. It is not Codex conversation activity.
+
 ## Unreleased menu-bar presentation — 7 November 2026
 
 On macOS 27, the status item uses `NSStatusItemExpandedInterfaceDelegate` to associate the custom worktree panel with AppKit's expanded-interface session. AppKit's begin/end callbacks show and hide the panel; explicit dismissal cancels the session. Older macOS versions keep the existing button target/action path. The earlier state/highlight retry experiments are removed, and search focus behavior is unchanged.
