@@ -1,16 +1,24 @@
 # Twig verification
 
-## Unreleased date sections and simpler menu — 7 November 2026
+The records below distinguish development checks from distribution checks. The refreshed v0.2 is **0.2.0, build 3**; the original build 2 record is retained as historical evidence.
 
-Activity now groups the effective activity dates into Today, earlier weekdays in the current calendar week, Last week, Earlier this month where applicable, and older month headings. Pins remain separate, Project keeps alphabetical repository groups, and search remains flat and relevance-ranked. Section labels use stronger text and separator lines. Sorting moved to Settings → Worktree list, and the permanent keyboard-hint footer was removed; keyboard handlers remain in place.
+## v0.2 build 3 distribution preparation — 7 November 2026
+
+The final code and approved no-separator layout passed a fresh complete debug suite: **171 tests, 148 core and 23 sync**, including real FSEvents tests, with no warnings or errors. `Support/Info.plist` keeps version **0.2.0** and increments the build number to **3**. The README uses the user-supplied CleanShot X capture of the actual native Activity view with disposable repositories.
+
+Build 3 signing, notarization, extracted-archive validation, and remote publication are pending. The distribution record below still describes the previously published build 2; it is not evidence of build 3 notarization.
+
+## v0.2 build 3: date sections and simpler menu — 7 November 2026
+
+Activity now groups the effective activity dates into Today, earlier weekdays in the current calendar week, Last week, Earlier this month where applicable, and older month headings. Pins remain separate, Project keeps alphabetical repository groups, and search remains flat and relevance-ranked. The final approved presentation uses adaptive gray section labels, extra top spacing, counts, and no separator lines. Sorting moved to Settings → Worktree list, and the permanent keyboard-hint footer was removed; keyboard handlers remain in place.
 
 The complete regression run passed **171 tests: 148 core and 23 sync**, including 12 calendar-grouping tests. Coverage includes local midnight, configurable week starts, time-zone differences, both Warsaw daylight-saving transitions, weeks crossing month/year boundaries, effective-date overrides, future/unknown dates, pins/deduplication, stable localized section IDs, and unchanged Project/search behavior. Calendar, time-zone, clock, and locale notifications refresh headings without polling, with show/wake refreshes as backstops.
 
-The `--demo-activity` preview built and launched with isolated preferences and five real Git worktrees. Native inspection confirmed Today (two worktrees), Thursday, Last week, and October, stronger section headings, and the absence of the header sort control and keyboard footer. All five rows fit in the inspected preview. Source, checkout, Git administrative, and current-branch-reference timestamps are backdated consistently with the saved open history. The Settings sort control compiled; its native interaction was left for later after the user took control to capture the preview. The debug app remains separate from the user's real discovery preferences.
+The `--demo-activity` preview built and launched with isolated preferences and five real Git worktrees. Native inspection confirmed Today (two worktrees), Thursday, Last week, and October, stronger section headings, and the absence of the header sort control and keyboard footer. All five rows fit in the inspected preview. Source, checkout, Git administrative, and current-branch-reference timestamps are backdated consistently with the saved open history. The Settings sort control compiled; its native interaction was left for later after the user took control to capture the preview. The debug app remains separate from the user's real discovery preferences. Subsequent styling-only builds passed after adjusting the gray headings and spacing and removing separators. The user approved the final interface and supplied the CleanShot X capture now used in the README; the screenshot shows the native app with disposable demonstration repositories.
 
-## Unreleased Activity / Project sorting — 7 November 2026
+## Activity / Project sorting before the final Settings move — 7 November 2026
 
-The menu header now exposes a saved Activity / Project switch. Activity preserves global recent-first order after pins; Project includes every repository in natural alphabetical order, preserving recent-first order inside each project. Search keeps relevance ranking and temporarily disables the switch. Legacy grouping preferences migrate to the equivalent view, and new preferences default to Activity.
+This earlier development check used a saved Activity / Project switch in the menu header. The final build moves that control to Settings → Worktree list, as recorded above. Activity preserves global recent-first order after pins; Project includes every repository in natural alphabetical order, preserving recent-first order inside each project. Search kept relevance ranking and temporarily disabled that earlier header switch. Legacy grouping preferences migrate to the equivalent view, and new preferences default to Activity.
 
 The complete regression run passed **159 tests: 136 core and 23 sync**, including real FSEvents tests. Sorting coverage checks interleaved activity across repositories, natural project-name order, distinct repositories with the same name, singleton and pinned sections, canonical aliases, search-rank preservation, and preference migration/round trips/unknown-value fallback.
 
@@ -20,7 +28,7 @@ The real worktree list was switched to Activity through the native control, and 
 
 Activity remains a bounded estimate from source/Git metadata timestamps and successful Twig opens. Deep or hidden source edits beyond the discovery scan bounds may not change order until Git metadata changes or the worktree is opened through Twig. It is not Codex conversation activity.
 
-## Unreleased menu-bar presentation — 7 November 2026
+## v0.2 build 3: menu-bar presentation — 7 November 2026
 
 On macOS 27, the status item uses `NSStatusItemExpandedInterfaceDelegate` to associate the custom worktree panel with AppKit's expanded-interface session. AppKit's begin/end callbacks show and hide the panel; explicit dismissal cancels the session. Older macOS versions keep the existing button target/action path. The earlier state/highlight retry experiments are removed, and search focus behavior is unchanged.
 
@@ -30,9 +38,9 @@ The user confirmed edge alignment in the running build. Native geometry also sho
 
 The global shortcut retains direct panel presentation as a fallback: macOS 27's session API has no public begin method. A programmatic button click is attempted first, but a visible session highlight from shortcut activation is not assumed. Auxiliary Settings, Welcome, and details windows do not create an expanded-interface session.
 
-## Unreleased worktree details — 7 November 2026
+## Worktree-details development checks for v0.2 build 3 — 7 November 2026
 
-The development implementation adds project type, successful-open age, destination-editor icons, and local Git change/conflict/ahead/behind indicators to the existing two-line rows. It remains **unreleased**; the public v0.2 app and its download are unchanged. See the [feature record](features/WORKTREE_DETAILS.md) for behavior and limits.
+The implementation adds project type, successful-open age, destination-editor icons, and local Git change/conflict/ahead/behind indicators to the existing two-line rows. These features are included in the refreshed v0.2 build 3. See the [feature record](features/WORKTREE_DETAILS.md) for behavior and limits.
 
 The combined development build passed. An initial complete run passed **152 tests: 130 core, including 16 Git tests, and 22 sync**. A transport-denial test and an `info/exclude` routing test were then added; focused reruns passed **17 Git tests, 20 routing tests, and 3 real FSEvents tests**. Together, those runs cover the final **154-test inventory: 131 core and 23 sync**. This records a complete baseline plus targeted followups, not a single final 154-test run.
 
@@ -49,13 +57,13 @@ The demo generator now matches Foundation's canonical spelling of macOS temporar
 
 The default reader budget is two seconds and 1 MiB across a checkout's commands, with at most four checkout reads running concurrently. Positive finite timeout overrides are bounded at 60 seconds. Core tests cover the status reader's local-only process boundaries; a filtered-repository unavailable state was not exercised through the UI. Full VoiceOver navigation, Intel hardware, and older supported macOS releases were not tested for this feature.
 
-## v0.2 distribution — 7 November 2026
+## Original v0.2 build 2 distribution — 7 November 2026
 
-The v0.2 archive contains **Twig 0.2.0, build 2**, built in release configuration with **Xcode 27.2** for both **arm64 and x86_64**. The release pipeline runs the 124-test suite, signs with Developer ID and hardened runtime, obtains Apple's notarization approval, staples the ticket, and checks Gatekeeper acceptance both before and after extracting the final ZIP. The downloadable ZIP and SHA-256 checksum are attached to [v0.2](https://github.com/lkuczborski/Twig/releases/tag/v0.2).
+The original v0.2 archive contained **Twig 0.2.0, build 2**, built in release configuration with **Xcode 27.2** for both **arm64 and x86_64**. That release pipeline passed the 124-test suite, signed with Developer ID and hardened runtime, obtained Apple's notarization approval, stapled the ticket, and checked Gatekeeper acceptance both before and after extracting the final ZIP. The requested v0.2 replacement uses build 3; the counts in this paragraph describe the original distribution run.
 
 The signed release is a normal build: it has no `TWIG_PREVIEW` demo preference override. CI continues to exercise Xcode 27.1. Producing an Intel slice does not constitute testing on Intel hardware. VoiceOver, multiple displays, older supported macOS versions, the login approval-required state, and a full sign-out/sign-in cycle remain outside this verification.
 
-## v0.2 application checks — 7 November 2026
+## Original v0.2 build 2 application checks — 7 November 2026
 
 All 124 tests passed again (104 core and 20 sync), with real FSEvents tests run outside the tool sandbox. Terminal’s descendant shells had the exact fixture checkout as their working directory, corroborated by Git metadata and saved open time. A Developer ID signed build installed in Applications registered and unregistered launch at login successfully; the original off state was restored. A full sign-out/reboot and an approval-required state were not exercised. The normal build discovered 22 real worktrees with existing preferences; welcome overflow scrolled correctly. See [the v0.2 feature record](features/NEXT_VERSION.md) for details.
 

@@ -12,8 +12,8 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/twig-menu.png" width="360" alt="Twig showing pinned worktrees, repository groups, personal labels, and keyboard navigation">
-  <br><sub>Actual native interface with demonstration repositories. Liquid Glass on macOS 26.</sub>
+  <img src="docs/assets/twig-menu.png" width="360" alt="Twig showing date-grouped Activity, project types, editor icons, and local Git change and conflict indicators">
+  <br><sub>Actual native interface with demonstration repositories, captured with CleanShot X on macOS 27.2.</sub>
 </p>
 
 ## Pick up where you left off
@@ -23,18 +23,14 @@ Press **Control–Shift–T**, type a few letters, and open the worktree you nee
 **Twig v0.2** makes that everyday workflow faster:
 
 - **Stay on the keyboard.** Use a configurable global shortcut, fuzzy search, arrow-key selection, and Return to open. Jump back to your previous worktree with **Shift–Command–Return**.
-- **Recognize your work.** Pin active worktrees, group them by repository, and give them personal labels. Search includes those labels, and long branch names keep their distinctive endings visible.
+- **Pick up recent work.** Activity groups worktrees into Today, weekdays from this week, Last week, and older dates. Switch to alphabetical Project groups in **Settings → Worktree list → Sort by**. Pins stay at the top, and your choice is saved.
+- **Recognize your work.** See project types, destination-editor icons, and recorded last-opened times alongside branch names. Add searchable personal labels; long branches keep their distinctive endings visible.
+- **See local Git status.** Spot changed files, unresolved conflicts, and commits ahead or behind the locally known upstream. Checks run in the background without fetching; unavailable status never implies a clean checkout.
 - **Choose your tools.** Open once in another supported installed editor, save an editor for a whole repository, or open Apple's Terminal in the selected worktree. Individual worktree choices still take priority.
 - **Bring your repositories.** Add a local checkout or bare Git repository to discover its existing worktrees alongside Codex. Unavailable sources stay visible in Settings; removing a source leaves its files on disk.
 - **Get started quickly.** Welcome shows a scrollable list of discovered worktrees, explains the shortcut, and offers optional launch at login. Reopen it from Settings at any time.
 
 Twig still opens the project itself—including Xcode workspaces and nested project targets—rather than making you find it inside a folder. Every automatic suggestion has an explanation and can be overridden.
-
-## In development
-
-Worktree details are implemented on the development branch and are **not included in the v0.2 download**. They keep two-line rows and branch identity while adding project type, the last successful open through Twig, the destination editor's icon, and local Git change/conflict/ahead/behind indicators. Upstream counts use existing local refs; Twig does not fetch. Automated and native preview checks are recorded in the [feature notes](docs/features/WORKTREE_DETAILS.md), including remaining validation limits.
-
-Choose **Activity / Project** in **Settings → Worktree list**. Activity groups recent work across projects into Today, weekdays from this week, Last week, and older month sections. Project groups all projects A–Z with recent work first inside each group. Clear section headings separate longer lists; the menu keeps its space for search and worktrees. Pins stay at the top. The choice is saved, and search results continue to rank by relevance. Existing grouping preferences migrate to the corresponding view; new preferences default to Activity.
 
 ## Install
 
@@ -44,9 +40,9 @@ Choose **Activity / Project** in **Settings → Worktree list**. Activity groups
 
 **macOS 14 or later · Apple Silicon and Intel · Developer ID signed and notarized**
 
-Twig has no Dock icon. Liquid Glass is available on macOS 26; earlier versions use native translucent material. Launch at login is optional and can be changed in Settings. [SHA-256 checksum](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip.sha256).
+Twig has no Dock icon. Liquid Glass is available on macOS 26 and later; earlier versions use native translucent material. Launch at login is optional and can be changed in Settings. [SHA-256 checksum](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip.sha256).
 
-**Upgrading from v0.1:** quit Twig and replace the app in Applications. Your saved Codex home, editor choices, and open history are preserved. New settings receive defaults, and the welcome window introduces the new workflow. Automatic updates are not yet included.
+**Updated v0.2 (0.2.0, build 3):** this download includes the worktree details, Activity date sections, and menu-bar refinements. If you downloaded v0.2 earlier, download it again. Quit Twig before replacing the app in Applications. Saved discovery settings, editor choices, pins, labels, and open history are preserved; the former grouping preference migrates to Activity or Project. New preferences default to Activity. Automatic updates are not yet included.
 
 Read the [v0.2 release notes](docs/RELEASE_NOTES_v0.2.md).
 
@@ -64,7 +60,7 @@ Read the [v0.2 release notes](docs/RELEASE_NOTES_v0.2.md).
 | Escape | Dismiss Twig |
 | ⌘Q | Quit Twig |
 
-Only the configurable global shortcut works from another app; the other keyboard shortcuts apply while Twig is focused. The gear menu contains grouping, the previous-worktree action, **Add Repository…**, Settings, and Quit. Each row's actions menu contains pins, labels, opening choices, Finder actions, path copying, and **Project & detection details**.
+Only the configurable global shortcut works from another app; the other keyboard shortcuts apply while Twig is focused. The gear menu contains the previous-worktree action, **Add Repository…**, Settings, and Quit. Each row's actions menu contains pins, labels, opening choices, Finder actions, path copying, and **Project & detection details**.
 
 Fuzzy search covers project names, branches, personal labels, and editor names. Folder paths use literal matching to keep shared directory prefixes from producing unrelated matches.
 
@@ -83,6 +79,8 @@ Twig reads local Git metadata and inspects project structure and small configura
 A saved worktree choice takes priority, followed by a repository editor choice, project detection, and your fallback editor. An installed general editor or Finder handles projects without another match. Repository choices resolve the project target inside each checkout. **Open once with…** leaves saved editor choices intact. Mixed repositories expose their detected targets in **Project & detection details**.
 
 Codex discovery uses `~/.codex/worktrees`, or `$CODEX_HOME/worktrees` when supplied at launch. Choose another Codex home in Settings, or use **Add Repository…** for other local repositories. Only existing local checkouts appear; archived, deleted, and remote worktrees are not reconstructed. “Recent” means observed filesystem/Git activity or the last successful open through Twig, rather than chat activity.
+
+Activity uses gray date headings and spacing to separate work without extra rules or a permanent keyboard-hint footer. The panel aligns to an edge of its menu-bar icon and stays within the screen. On macOS 27, clicking the icon keeps its native selection visible while the panel is open, including during search.
 
 Filesystem events invalidate cached results. When Twig's views are hidden, changes wait without rescanning; unchanged openings reuse cached results. Manual refresh remains available.
 
@@ -106,7 +104,8 @@ To explore the actual interface using invented repositories and separate demo pr
 ```sh
 ./script/build_and_run.sh --demo          # Menu with sample worktrees
 ./script/build_and_run.sh --demo-welcome  # Include the welcome window
-./script/build_and_run.sh --demo-details  # Development details with real local Git states
+./script/build_and_run.sh --demo-details  # Row details with real local Git states
+./script/build_and_run.sh --demo-activity # Date-grouped Activity for screenshots
 ```
 
 Each demo creates fresh Git fixtures under `dist/demos/`; it does not copy personal projects or conversations. Demo mode still uses real installed editors and real macOS login-item controls.

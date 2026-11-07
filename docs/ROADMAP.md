@@ -1,13 +1,15 @@
 # Twig roadmap
 
-Twig helps you return to the right local worktree in the right editor, with understandable and overridable choices. **v0.2 is the current release.** Its shipped features are listed separately from development work and future proposals; future items are not delivery commitments.
+Twig helps you return to the right local worktree in the right editor, with understandable and overridable choices. **v0.2 is the current release.** The refreshed download is **0.2.0, build 3**. Its shipped features are listed separately from future proposals; future items are not delivery commitments.
 
 ## Available in v0.2
 
 | Area | Implemented behavior |
 | --- | --- |
 | Keyboard workflow | Configurable global shortcut, default Control–Shift–T; fuzzy search with literal path matching; arrow-key selection in displayed order; Return to open; previous-worktree action with Shift–Command–Return. |
-| Worktree organization | Pins, repository grouping by shared Git metadata, searchable personal labels, and branch names with middle truncation. Clear section boundaries distinguish pins, repository groups, and other worktrees. |
+| Worktree organization | Pins, searchable personal labels, and branch names with middle truncation. Settings selects date-grouped Activity or alphabetical Project groups; pins stay first, recent work leads within a project, and search remains ranked by relevance. |
+| Worktree context | Project type, recorded successful-open age, destination-editor icon, and local Git changed-file/conflict/ahead/behind indicators. Secondary context adapts to the available width. |
+| Menu-bar presentation | Gray section labels and spacing, a compact search-and-list layout, and panel alignment to the icon within screen bounds. On macOS 27, native expanded-interface sessions retain the clicked icon’s selection during search. |
 | Welcome and launch at login | A scrollable discovered-worktree list, shortcut guidance, preference-recovery access, and optional native macOS login-item controls. Welcome can be reopened from Settings. |
 | Opening actions | Open once with a supported installed editor, repository editor defaults below individual worktree choices, and Apple's Terminal through directory URLs. Project targets resolve within the current checkout. |
 | Regular Git repositories | Explicit checkout or bare-repository roots alongside Codex, linked-worktree discovery, canonical deduplication, saved unavailable-root status, and filesystem subscriptions for the added sources. |
@@ -16,15 +18,15 @@ The v0.1 foundation remains: live branch and detached-HEAD labels, activity orde
 
 The release is packaged for Apple Silicon and Intel, Developer ID signed, and notarized. Local development builds use ad-hoc signing. Native demo modes provide invented repositories and separate preferences for screenshots and review. See the [release notes](RELEASE_NOTES_v0.2.md), [architecture](ARCHITECTURE.md), and [verification notes](VERIFICATION.md) for details.
 
-## Implemented in development: worktree details
+## Worktree details and Activity view
 
-The development implementation adds project type, successful-open age, and a destination-editor icon while preserving two-line rows and branch identity. Local Git indicators report changed files, conflicts, and ahead/behind counts against locally known upstream refs, without fetching.
+The refreshed v0.2 adds project type, successful-open age, and a destination-editor icon while preserving two-line rows and branch identity. Local Git indicators report changed files, conflicts, and ahead/behind counts against locally known upstream refs, without fetching.
 
-An Activity / Project choice in Settings → Worktree list selects recent work grouped by date or alphabetical project groups. Activity uses Today, weekday names from this week, Last week, Earlier this month when applicable, and month headings for older work. Stronger headings and separator lines distinguish sections. The menu has no permanent sort control or keyboard-hint footer. Pins remain first; project groups keep recent work first, and search remains ranked by relevance. The selected view persists across launches.
+An Activity / Project choice in Settings → Worktree list selects recent work grouped by date or alphabetical project groups. Activity uses Today, weekday names from this week, Last week, Earlier this month when applicable, and month headings for older work. Gray headings and extra spacing distinguish sections without separator lines. The menu has no permanent sort control or keyboard-hint footer. Pins remain first; project groups keep recent work first, and search remains ranked by relevance. The selected view persists across launches.
 
 Status reads run independently from discovery, with at most four concurrent checkouts and a default two-second / 1 MiB budget per checkout. Filesystem events invalidate results; work is cancelled when all Twig views are hidden. Unsupported or failed status reads remain unavailable rather than implying a clean worktree.
 
-The combined build, automated regressions, and native preview checks have passed with the limits recorded in the [feature notes](features/WORKTREE_DETAILS.md) and [verification record](VERIFICATION.md). These details remain **unreleased** and are not in the v0.2 download. Full VoiceOver navigation, Intel hardware, older supported macOS versions, and filtered-repository UI checks remain outside the completed verification.
+The combined build, automated regressions, and native preview checks have passed with the limits recorded in the [feature notes](features/WORKTREE_DETAILS.md) and [verification record](VERIFICATION.md). Full VoiceOver navigation, Intel hardware, older supported macOS versions, and filtered-repository UI checks remain outside the completed verification.
 
 ## Improve daily use
 
@@ -39,7 +41,7 @@ Broaden validation across VoiceOver, input methods, multiple displays, older sup
 
 ## Optional context and integrations
 
-- Last-commit context, beyond the local changed-file/conflict/ahead/behind indicators currently in development. Keep any additional reads bounded and off the UI path.
+- Last-commit context, beyond the local changed-file/conflict/ahead/behind indicators available in v0.2. Keep any additional reads bounded and off the UI path.
 - Pull-request links and CI state through an optional authenticated provider, with explicit network use and refresh cadence.
 - Optional Codex chat association and **Open chat** through a supported integration, without requiring conversation-text indexing.
 - Explicit repository actions that show what will run and where. Discovery must never execute detected project configuration automatically.

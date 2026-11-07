@@ -1,6 +1,6 @@
 # Worktree details
 
-**Status: implemented on the development branch, unreleased.** The combined build, automated checks, and native preview checks described below have passed. This feature is not included in the v0.2 download.
+**Status: included in the refreshed Twig v0.2, build 3.** The combined build, automated checks, and native preview checks described below have passed. The historical counts here refer to worktree-details development; later sorting and date-grouping checks are recorded in [VERIFICATION.md](../VERIFICATION.md).
 
 ## Row behavior
 
@@ -63,10 +63,10 @@ python3 script/make_demo.py dist/demos --demo-welcome
 
 ## Verification status
 
-Fixture generation has been checked for all three demo modes, including with unrelated Git environment variables supplied. The details fixtures were inspected with real Git: the changed-file counts, ahead/behind counts, and unresolved conflict match the table above. Successful-open fixture timestamps are in the past, and Website has no recorded open.
+Fixture generation has been checked for the original three demo modes, including with unrelated Git environment variables supplied. The details fixtures were inspected with real Git: the changed-file counts, ahead/behind counts, and unresolved conflict match the table above. Successful-open fixture timestamps are in the past, and Website has no recorded open.
 
 The combined development build passed. The complete baseline run passed 130 core tests, including 16 Git tests, plus 22 sync tests. After adding transport-denial and `info/exclude` routing coverage, focused reruns passed 17 Git tests, 20 routing tests, and 3 real FSEvents tests. Those runs cover the final inventory of 154 tests (131 core and 23 sync); they were not one final full-suite run.
 
 Native preview checks confirmed the table's Git counts, Swift and JS / TS project types, Xcode/Finder icons, successful-open ages, pins, labels, branch identity, search, and Down-arrow selection. The details view showed the exact saved open date and complete Git counts. Adding an untracked `LiveRefresh.md` file updated the row from two changed files to three through the watcher; adding it to the common `.git/info/exclude` changed the count back to two automatically, without manual refresh. Review fixes for Git exclude/attribute invalidation, linked-index scope, and coalesced ancestor/subdirectory events have automated coverage, with the live exclude-file case also confirmed in the native UI.
 
-Full VoiceOver navigation, Intel hardware, older supported macOS releases, and the unavailable-status UI for a repository with tracked filters remain unverified. These development checks do not change the public v0.2 release. The [verification record](../VERIFICATION.md) carries the run accounting and remaining limits.
+Full VoiceOver navigation, Intel hardware, older supported macOS releases, and the unavailable-status UI for a repository with tracked filters remain unverified. The [verification record](../VERIFICATION.md) carries the run accounting and remaining limits.

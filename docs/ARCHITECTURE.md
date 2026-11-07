@@ -11,9 +11,9 @@ Twig is a native macOS 14+ menu bar utility built with Swift 6, SwiftUI, and a n
 | `TwigCore/Detection` | Scan project structure and bounded snippets; return ranked editor/target candidates with reasons. |
 | `TwigCore/Launching` | Identify installed app bundles and resolve launch policy without launching anything. |
 | `TwigCore/Preferences` | Versioned preferences, canonical worktree keys, atomic JSON persistence. |
-| `TwigCore/Presentation/WorktreePresentation.swift` | Development work: project-type and successful-open-age descriptions derived from existing detection and preferences. |
-| `TwigCore/Git/GitStatusReader.swift`, `GitStatusParser.swift`, `BoundedGitProcess.swift` | Development work: bounded local read-only Git status, parsed independently of discovery. |
-| `Twig/Services/WorktreeGitStatusStore.swift` | Development work: observable status cache, bounded parallel reads, event invalidation, and visibility cancellation. |
+| `TwigCore/Presentation/WorktreePresentation.swift` | Project-type and successful-open-age descriptions derived from existing detection and preferences. |
+| `TwigCore/Git/GitStatusReader.swift`, `GitStatusParser.swift`, `BoundedGitProcess.swift` | Bounded local read-only Git status, parsed independently of discovery. |
+| `Twig/Services/WorktreeGitStatusStore.swift` | Observable status cache, bounded parallel reads, event invalidation, and visibility cancellation. |
 | `Twig` | Menu bar, search, worktree actions, detection details, settings, observable state, and `NSWorkspace` integration. |
 | `TwigInspect` | Read-only JSON diagnostics using the same core discovery, detection, and launch resolution. Never opens an editor or saves settings. |
 | `TwigCoreTests` | Swift Testing fixtures for discovery, detection, caching, installed apps, policy, and persistence. |
@@ -68,10 +68,11 @@ Rules cover explicit editor metadata, Xcode workspaces/projects and Swift packag
 `LaunchResolver.resolve(...)` is a pure decision function. Its precedence is:
 
 1. The saved worktree override, including its chosen target when valid.
-2. The highest-ranked project-evidence candidate whose IDE is installed.
-3. The configured fallback editor, if installed.
-4. An installed generic folder editor.
-5. Finder.
+2. A saved repository editor, resolving its project target in the current checkout.
+3. The highest-ranked project-evidence candidate whose IDE is installed.
+4. The configured fallback editor, if installed.
+5. An installed generic folder editor.
+6. Finder.
 
 An unavailable explicit override becomes `.missingApp`; Twig does not silently replace that choice. Targets are normalized and constrained to the worktree, including after symlink resolution. `WorkspaceService` checks existence again immediately before opening and passes URLs to `NSWorkspace`, without shell interpolation. Finder opening, revealing the enclosing folder, and copying the folder path are separate actions.
 
@@ -81,7 +82,9 @@ Installed applications are identified by known bundle identifiers through Launch
 
 The menu uses one native SwiftUI `glassEffect(.regular)` surface on macOS 26+, with matching rounded clipping. `MenuBarPanelController` presents it through an `NSHostingView` in a transparent, nonactivating `NSPanel`. This avoids `MenuBarExtra`'s additional frosted window backdrop, which caused the glass to sample already-blurred content instead of the desktop directly. There is no AppKit glass wrapper, custom blur, tint, or opacity approximation. Earlier macOS versions use one SwiftUI ultra-thin material in the same transparent panel.
 
-AppKit owns application startup, the status item, positioning, focus, Escape/outside-click dismissal, and reusable Settings/detail windows; SwiftUI owns all view content, controls, glass, and observable model bindings. Presentation actions are explicit callbacks, so the hosted views do not rely on scene actions from an absent SwiftUI scene. Native edit-menu commands preserve text editing. Event monitors exist only while the panel is open and are removed on dismissal. Native action-menu tracking preserves the parent panel, and clicks on Twig's status button are left to its toggle action rather than the outside-click monitor. No refresh polling or presentation timer is added.
+AppKit owns application startup, the status item, positioning, focus, Escape/outside-click dismissal, and reusable Settings/detail windows; SwiftUI owns all view content, controls, glass, and observable model bindings. Presentation actions are explicit callbacks, so the hosted views do not rely on scene actions from an absent SwiftUI scene. Native edit-menu commands preserve text editing. Event monitors exist only while the panel is open and are removed on dismissal. Native action-menu tracking preserves the parent panel, and clicks on Twig's status button are left to its native status-item handling rather than the outside-click monitor. No refresh polling or presentation timer is added.
+
+On macOS 27, `NSStatusItemExpandedInterfaceDelegate` connects the panel to AppKit’s expanded-interface session, which owns the clicked status item’s selection while search is focused. Explicit dismissal cancels the session; its end callback hides the panel. Older versions keep the button target/action path. Shortcut activation attempts a programmatic click and falls back to direct panel presentation; a session highlight from that fallback is not assumed. The panel aligns with the status button’s left edge when it fits, otherwise its right edge, then clamps to that screen’s visible bounds.
 
 Search keeps the scroll container alive and sizes its viewport from the unfiltered catalog, so matching and empty states do not resize the hosting panel or move the search header. SwiftUI geometry changes resize and re-anchor the panel when its catalog or banners change; presentation restores search focus through `FocusState`.
 
@@ -103,9 +106,9 @@ Preferences are stored at `~/Library/Application Support/Twig/preferences.json`,
 
 Unknown schema versions or unreadable preferences block ordinary saves to preserve existing data. The GUI offers explicit backup-and-reset recovery. `PreferencesPersisting` is the existing injection boundary for alternative storage; `TwigStore` currently uses `FilePreferencesStore` directly.
 
-## Worktree details in development
+## Worktree details
 
-This section describes the implemented development feature. Automated and native preview checks are recorded in [VERIFICATION.md](VERIFICATION.md), with their practical limits. The feature remains unreleased and is not part of v0.2.
+Worktree details are included in v0.2 build 3. Automated and native preview checks are recorded in [VERIFICATION.md](VERIFICATION.md), with their practical limits.
 
 `WorktreePresentation` derives a useful project type for the resolved launch target and formats saved successful-open times. `WorktreeRowView` and `WorktreeMetadataView` retain two-line rows and branch identity, fitting secondary context into the available width. The destination icon comes from the installed application's metadata; unavailable editors and Finder have explicit fallback presentation. Tooltips and accessibility descriptions retain context that does not fit inline.
 
@@ -130,7 +133,7 @@ Extend the current layers rather than adding project rules to views:
 - Extend event routing or scan caching while preserving hidden-state coalescing, a manual full refresh, and the same core result types.
 - Migrate preference schema explicitly before introducing repository-wide rules or custom applications.
 
-Discovery, detection, launch-policy, and persistence tests use isolated directory fixtures and do not need installed IDEs, an active Codex account, a GUI session, or Git execution. Development status tests additionally create isolated Git repositories to exercise actual status behavior. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
+Discovery, detection, launch-policy, and persistence tests use isolated directory fixtures and do not need installed IDEs, an active Codex account, a GUI session, or Git execution. Status tests additionally create isolated Git repositories to exercise actual status behavior. Real watcher tests require access to the macOS FSEvents service; GUI launching and window visibility still require smoke testing. `TwigInspect` exposes the actual local candidates and decisions for that verification; its JSON includes paths and branch names, so review it before sharing.
 
 
 ## Distribution

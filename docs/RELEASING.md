@@ -13,7 +13,7 @@ Credentials stay in Keychain. Do not put passwords, certificates, private keys, 
 
 ## Build and verify
 
-Update `CFBundleShortVersionString` and `CFBundleVersion` in `Support/Info.plist`, then commit the release changes. The `v0.2` Git tag corresponds to bundle version `0.2.0`, build `2`. The earlier v0.1 release used Xcode 27.1; v0.2 is built with Xcode 27.2.
+Update `CFBundleShortVersionString` and `CFBundleVersion` in `Support/Info.plist`, then commit the release changes. The `v0.2` Git tag corresponds to bundle version `0.2.0`, build `3`. The original v0.2 download was build `2`; the owner explicitly requested republishing v0.2 with the approved refinements. The earlier v0.1 release used Xcode 27.1; v0.2 is built with Xcode 27.2.
 
 ```sh
 ./script/release.sh v0.2 \
@@ -32,6 +32,6 @@ The script refuses to overwrite an existing release output. Keep submission meta
 
 ## Publish
 
-After verification, create the annotated version tag at the exact source commit, push the branch and tag, and create a draft GitHub release with the two verified assets and the corresponding release notes. Check the uploaded checksum, then publish the draft. Do not replace published binaries under the same version; issue a new version for changes.
+After verification, create the annotated version tag at the exact source commit, push the branch and tag, and create a draft GitHub release with the two verified assets and the corresponding release notes. Check the uploaded checksum, then publish the draft. Normally issue a new version for changes instead of replacing a published binary. The owner explicitly requested a v0.2 replacement for build 3: increment the bundle build number, preserve the previous artifact and tag target locally, verify the new archive before replacing the two assets, move the annotated tag to the exact new source commit with a checked lease, and state the replacement in the release notes. Keep intro media out of the release assets.
 
 The script packages and verifies only. Repository publication is a separate explicit step so an unsuccessful notarization cannot publish an unverified artifact. Signing identities, notarization output, and temporary test data stay outside Git.

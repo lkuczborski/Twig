@@ -1,6 +1,6 @@
 # v0.2 feature and verification record
 
-This record describes the five feature worktrees integrated into **Twig v0.2** on **7 November 2026**. The combined branch was merged into `main`; the release is version **0.2.0**, build **2**. See the [release notes](../RELEASE_NOTES_v0.2.md) and [distribution verification](../VERIFICATION.md) for release status and checks.
+This historical record describes the five feature worktrees integrated into the initial **Twig v0.2** on **7 November 2026**. That release was version **0.2.0**, build **2**. The refreshed build **3** additionally includes [worktree details](WORKTREE_DETAILS.md), Activity / Project sorting, date sections, and menu-bar presentation refinements. See the [release notes](../RELEASE_NOTES_v0.2.md) and [distribution verification](../VERIFICATION.md) for release status and checks.
 
 ## Feature branches and worktrees
 
