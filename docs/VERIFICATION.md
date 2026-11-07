@@ -2,11 +2,13 @@
 
 The records below distinguish development checks from distribution checks. The refreshed v0.2 is **0.2.0, build 3**; the original build 2 record is retained as historical evidence.
 
-## v0.2 build 3 distribution preparation — 7 November 2026
+## v0.2 build 3 distribution — 7 November 2026
 
 The final code and approved no-separator layout passed a fresh complete debug suite: **171 tests, 148 core and 23 sync**, including real FSEvents tests, with no warnings or errors. `Support/Info.plist` keeps version **0.2.0** and increments the build number to **3**. The README uses the user-supplied CleanShot X capture of the actual native Activity view with disposable repositories.
 
-Build 3 signing, notarization, extracted-archive validation, and remote publication are pending. The distribution record below still describes the previously published build 2; it is not evidence of build 3 notarization.
+The release pipeline also passed **171 tests in release configuration** and built both **arm64 and x86_64** with **Xcode 27.2**. Build 3 is Developer ID signed with hardened runtime, notarized by Apple (submission `111fcf5f-684a-48e6-a874-3ceb37147902`, Accepted), and stapled. Signature, stapled-ticket, and Gatekeeper checks passed for the staged app and the app extracted from the final ZIP. Apple's submission log reported no issues. The release has no `TWIG_PREVIEW` override or bundled demo repositories.
+
+Packaging used commit `6e19194c0290efddd4e97615334b2bc2960cc254`; subsequent release bookkeeping changes only this verification record. The previously published build 2 archive, checksum, release metadata, and tag target were preserved locally before replacement. The public release contains the universal app ZIP, its SHA-256 checksum, and GitHub's source archives; intro media remains excluded. Producing an Intel slice does not constitute testing on Intel hardware. The older-macOS, full VoiceOver, and multi-display limits recorded below still apply.
 
 ## v0.2 build 3: date sections and simpler menu — 7 November 2026
 
