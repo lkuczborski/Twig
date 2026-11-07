@@ -46,6 +46,7 @@ grove = repository("Grove")
 website = repository("Website", swift=False)
 search = worktree(atlas, "search", "feature/instant-search")
 navigation = worktree(atlas, "navigation", "fix/sidebar-keyboard-navigation")
+accessibility = worktree(atlas, "accessibility", "feature/voiceover-support")
 design = worktree(grove, "design", "feature/native-settings")
 homepage = worktree(website, "homepage", "refresh/autumn-homepage")
 now = time.time() * 1000
@@ -56,7 +57,7 @@ preferences = {
     "pinnedWorktrees": [str(search)],
     "worktreeLabels": {str(search): "Instant search", str(design): "Settings refresh"},
     "groupByRepository": True,
-    "lastOpened": {str(folder): now - index * 60000 for index, folder in enumerate([search, navigation, design, homepage])},
+    "lastOpened": {str(folder): now + 10000 - index * 1000 for index, folder in enumerate([search, navigation, accessibility, design, homepage])},
 }
 (root / "preferences.json").write_text(json.dumps(preferences, indent=2))
 print(root)

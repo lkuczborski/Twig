@@ -151,6 +151,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             statusItem.button?.highlight(true)
             installEventMonitors()
         }
+#if TWIG_PREVIEW
+        PreviewEnvironment.record("panel toggled: visible=\(panel.isVisible), key=\(panel.isKeyWindow)")
+#endif
     }
 
     private func resize(to size: CGSize) {

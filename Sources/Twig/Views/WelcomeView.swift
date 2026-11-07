@@ -61,8 +61,9 @@ struct WelcomeView: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "menubar.arrow.up.rectangle").font(.title2).foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Find the branch in your menu bar").font(.system(size: 13, weight: .medium))
-                    Text("Search for a project or branch, then press Return to open it in the right editor.")
+                    Text(store.preferences.globalShortcut.map { "Press \($0.displayName) from anywhere" }
+                         ?? "Find the branch in your menu bar").font(.system(size: 13, weight: .medium))
+                    Text("Search for a project or branch, use ↑ ↓ to choose, then Return to open. You can change the shortcut in Settings.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
             }

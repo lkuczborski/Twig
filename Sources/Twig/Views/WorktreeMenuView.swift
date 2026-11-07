@@ -90,7 +90,8 @@ struct WorktreeMenuView: View {
                     ForEach(section.worktrees) { worktree in
                         if let item = byID[worktree.id] {
                             WorktreeRowView(item: item, store: store, showDetails: showDetails,
-                                            isRepositoryGroup: section.isRepositoryGroup).id(item.id)
+                                            isRepositoryGroup: section.isRepositoryGroup)
+                                .id(section.isRepositoryGroup).id(item.id)
                         }
                     }
                 }
