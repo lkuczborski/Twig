@@ -51,14 +51,17 @@ The following checks were observed in the actual running combined preview:
 - Setting the repository editor to Xcode changed the launch explanation to “Your editor choice for this repository.”
 - **Add Repository…** used the native folder picker. Adding the sample Atlas root found its four checkouts and merged linked checkouts already present through Codex discovery.
 
-These checks use synthetic repositories and isolated Twig preferences. Screenshot and video references, plus the final combined test result, are recorded after capture and final validation; per-feature test results are in the linked notes above.
+These checks use synthetic repositories and isolated Twig preferences. Native screenshots and interaction captures are produced from this same preview; per-feature notes are linked above.
+
+## Combined regression result
+
+The final combined regression run passed **124 tests**: **104 core tests in 11 suites** and **20 sync tests in two suites**, including the real FSEvents fixtures. This includes the follow-up bare-repository and missing-linked-checkout restoration fixes. Counts are from the combined run, not the sum of feature-branch reports.
 
 ## Validation limits
 
 - Global shortcut registration reported no error, and the user verified hardware invocation from another app. Targeted UI-automation key injection alone did not activate the Carbon hotkey; it is not the evidence for that confirmation.
 - Terminal accepted URL dispatch. The UI tool refused inspection of Terminal, so its actual resulting working directory has not been verified. Core tests cover directory validation and paths containing spaces, quotes, shell characters, Unicode, newlines, and symlinks.
 - Login registration was not toggled for screenshots. The ad-hoc preview reported that Twig should be moved to Applications. Installed signed-app registration, approval, launch at sign-in, and unregister behavior remain unverified.
-- The final combined regression run is pending at this documentation checkpoint. Feature-branch build and test results are recorded separately and must not be added together as a combined suite result.
 - VoiceOver, multiple displays, older supported macOS versions, Intel hardware, universal release packaging, and notarization remain separate validation work.
 
 Automatic updates, remote CI/PR status, and worktree cleanup are not implemented. This preview performs no release publishing.

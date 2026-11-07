@@ -22,7 +22,8 @@ The five branches remain separate worktrees and are combined on `codex/next-prev
 
 ## Finish preview validation and release preparation
 
-- Complete the combined regression suite and record the exact result in the preview manifest. The user has confirmed that physical Control–Shift–T opens Twig from another application.
+The combined regression suite passes **124 tests**: 104 core tests and 20 sync tests, including real FSEvents fixtures. The user has confirmed that physical Control–Shift–T opens Twig from another application. Remaining checks:
+
 - Confirm Terminal's actual working directory after launch, including paths with spaces and special characters. URL dispatch and fixture validation alone do not prove Terminal's resulting directory.
 - Exercise launch-at-login enable/disable, approval-required state, and sign-in behavior using an appropriately installed, signed app. The preview's login registration has not been toggled for capture.
 - Check VoiceOver, input methods, multiple displays, older supported macOS releases, and Intel hardware. Preserve useful errors for missing editors, unavailable repositories, stale project targets, and unreadable preferences.
