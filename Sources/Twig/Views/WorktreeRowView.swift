@@ -69,7 +69,9 @@ struct WorktreeRowView: View {
             .foregroundStyle(.secondary).padding(.trailing, 5)
             .help("Worktree actions").accessibilityLabel("Actions for \(store.displayTitle(for: item))")
         }
-        .background(hovering ? Color.primary.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+        .background(store.highlightedID == item.id ? Color.accentColor.opacity(0.16) :
+                    hovering ? Color.primary.opacity(0.055) : Color.clear, in: RoundedRectangle(cornerRadius: 5))
+        .accessibilityAddTraits(store.highlightedID == item.id ? .isSelected : [])
         .onHover { hovering = $0 }
     }
 

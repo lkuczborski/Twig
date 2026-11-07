@@ -18,12 +18,13 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     public var pinnedWorktrees: Set<String>
     public var worktreeLabels: [String: String]
     public var groupByRepository: Bool
+    public var globalShortcut: GlobalShortcut?
 
     public init(codexHome: String? = nil, fallbackIDE: IDEID? = nil,
                 overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
                 pinnedWorktrees: Set<String> = [], worktreeLabels: [String: String] = [:],
                 groupByRepository: Bool = true, repositoryEditors: [String: IDEID] = [:],
-                hasCompletedWelcome: Bool = false) {
+                hasCompletedWelcome: Bool = false, globalShortcut: GlobalShortcut? = .default) {
         self.codexHome = codexHome
         self.fallbackIDE = fallbackIDE
         self.overrides = overrides
@@ -33,6 +34,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         self.pinnedWorktrees = pinnedWorktrees
         self.worktreeLabels = worktreeLabels
         self.groupByRepository = groupByRepository
+        self.globalShortcut = globalShortcut
     }
 
     public func overrideForWorktree(_ folder: URL) -> WorktreeOverride? {
@@ -78,9 +80,16 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         worktreeLabels[WorktreePath.key(for: folder)] = cleaned.isEmpty ? nil : cleaned
     }
 
+    public func previousWorktreeID(among ids: Set<String>) -> String? {
+        let recent = lastOpened.filter { ids.contains($0.key) }.sorted {
+            $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value
+        }
+        return recent.dropFirst().first?.key ?? recent.first?.key
+    }
+
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened
-        case hasCompletedWelcome, repositoryEditors
+        case hasCompletedWelcome, repositoryEditors, globalShortcut
         case pinnedWorktrees, worktreeLabels, groupByRepository
     }
 
@@ -98,6 +107,8 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         repositoryEditors = try container.decodeIfPresent([String: IDEID].self, forKey: .repositoryEditors) ?? [:]
         pinnedWorktrees = try container.decodeIfPresent(Set<String>.self, forKey: .pinnedWorktrees) ?? []
         worktreeLabels = try container.decodeIfPresent([String: String].self, forKey: .worktreeLabels) ?? [:]
+        globalShortcut = container.contains(.globalShortcut)
+            ? try container.decodeIfPresent(GlobalShortcut.self, forKey: .globalShortcut) : .default
         groupByRepository = try container.decodeIfPresent(Bool.self, forKey: .groupByRepository) ?? true
     }
 
@@ -113,5 +124,6 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         try container.encode(pinnedWorktrees.sorted(), forKey: .pinnedWorktrees)
         try container.encode(worktreeLabels, forKey: .worktreeLabels)
         try container.encode(groupByRepository, forKey: .groupByRepository)
+        try container.encode(globalShortcut, forKey: .globalShortcut)
     }
 }

@@ -14,6 +14,7 @@ struct TwigSettingsView: View {
                 LoginItemSettingsView()
                 Button("Welcome to Twig…", action: showWelcome)
             }
+            Section("Keyboard") { ShortcutRecorderView(store: store) }
             Section("Worktree discovery") {
                 TextField("Codex home", text: $codexPath, prompt: Text("Automatic (~/.codex)"))
                 HStack {

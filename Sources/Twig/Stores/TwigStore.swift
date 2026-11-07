@@ -16,7 +16,10 @@ final class TwigStore {
     private(set) var preferencesNeedRecovery = false
     var errorMessage: String?
     var selectedID: String?
+    var highlightedID: String?
     var search = ""
+    var shortcutError: String?
+    @ObservationIgnored var onGlobalShortcutChange: ((GlobalShortcut?) -> String?)?
     private let scanner = WorktreeScanner()
     private let workspace = WorkspaceService()
     private let persistence: FilePreferencesStore
@@ -68,11 +71,40 @@ final class TwigStore {
 
     var filteredItems: [ScannedWorktree] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
-        return sortedItems.filter {
-            query.isEmpty || [label(for: $0) ?? "", $0.worktree.repositoryName, $0.worktree.branch ?? "detached",
-                              $0.worktree.folder.path, editorName(for: $0)]
-                .contains { $0.localizedCaseInsensitiveContains(query) }
-        }
+        guard !query.isEmpty else { return sortedItems }
+        return sortedItems.enumerated().compactMap { index, item -> (ScannedWorktree, Int, Int)? in
+            guard let score = WorktreeSearch.score(query: query, fields: [label(for: item) ?? "", item.worktree.repositoryName,
+                item.worktree.branch ?? "detached", item.worktree.folder.path, editorName(for: item)]) else { return nil }
+            return (item, score, index)
+        }.sorted { $0.1 == $1.1 ? $0.2 < $1.2 : $0.1 > $1.1 }.map { $0.0 }
+    }
+
+    var highlightedItem: ScannedWorktree? {
+        let results = visibleItems
+        let id = WorktreeSelection.resolved(highlightedID, in: results.map(\.id))
+        return results.first { $0.id == id }
+    }
+
+    var previousItem: ScannedWorktree? {
+        let id = preferences.previousWorktreeID(among: Set(items.map(\.id)))
+        return items.first { $0.id == id }
+    }
+
+    func reconcileHighlight() {
+        highlightedID = WorktreeSelection.resolved(highlightedID, in: visibleItems.map(\.id))
+    }
+
+    func moveHighlight(by offset: Int) {
+        highlightedID = WorktreeSelection.moved(highlightedItem?.id, by: offset, in: visibleItems.map(\.id))
+    }
+
+    func openHighlighted() async {
+        if let item = highlightedItem { await open(item) }
+    }
+
+    func openPrevious() async {
+        await processPending(allowWhileHidden: true)
+        if let item = previousItem { await open(item) }
     }
 
     var selectedItem: ScannedWorktree? { items.first { $0.id == selectedID } }
@@ -193,6 +225,7 @@ final class TwigStore {
                 if Task.isCancelled { syncState.invalidate(request); return }
                 if codexHome != root { syncState.invalidate(.full); continue }
                 items = snapshot.items
+                reconcileHighlight()
                 warnings = snapshot.warnings
                 lastRefreshed = Date()
             }
@@ -278,6 +311,7 @@ final class TwigStore {
             } ?? resolution(for: current)
             try await workspace.open(destination)
             recordOpened(current)
+            highlightedID = current.id
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -324,6 +358,18 @@ final class TwigStore {
         return save(updated)
     }
 
+    func setGlobalShortcut(_ shortcut: GlobalShortcut?) {
+        if let shortcut, !shortcut.isValid {
+            shortcutError = "Include Command, Control, or Option with a key."
+            return
+        }
+        shortcutError = onGlobalShortcutChange?(shortcut)
+        guard shortcutError == nil else { return }
+        var updated = preferences
+        updated.globalShortcut = shortcut
+        if !save(updated) { _ = onGlobalShortcutChange?(preferences.globalShortcut) }
+    }
+
     func setCodexHome(_ path: String) {
         let cleaned = path.trimmingCharacters(in: .whitespacesAndNewlines)
         if !cleaned.isEmpty {
@@ -355,6 +401,7 @@ final class TwigStore {
             let defaults = TwigPreferences()
             try persistence.reset(defaults)
             preferences = defaults
+            shortcutError = onGlobalShortcutChange?(defaults.globalShortcut)
             preferencesNeedRecovery = false
             errorMessage = nil
             discoverySettingsChanged()

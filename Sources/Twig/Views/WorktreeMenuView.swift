@@ -12,6 +12,7 @@ struct WorktreeMenuView: View {
             searchBar
             Divider()
             content
+            keyboardFooter
             if let message = store.errorMessage { errorBanner(message) }
             if !store.warnings.isEmpty {
                 HStack(alignment: .top, spacing: 7) {
@@ -26,8 +27,21 @@ struct WorktreeMenuView: View {
         .modifier(MenuGlassBackground())
         .background(WindowVisibilityObserver { visible in
             store.contentVisibilityChanged("menu", isVisible: visible)
-            DispatchQueue.main.async { searchFocused = visible }
+            DispatchQueue.main.async {
+                searchFocused = visible
+                if visible { store.reconcileHighlight() }
+            }
         }.frame(width: 0, height: 0))
+        .background(MenuKeyboardHandler(
+            onMove: store.moveHighlight,
+            onOpen: { Task { await store.openHighlighted() } },
+            onPrevious: { Task { await store.openPrevious() } },
+            onDismiss: presentation.dismiss
+        ).frame(width: 0, height: 0))
+        .onChange(of: store.search) { _, _ in
+            store.highlightedID = nil
+            store.reconcileHighlight()
+        }
     }
 
     private var searchBar: some View {
@@ -36,7 +50,7 @@ struct WorktreeMenuView: View {
             TextField("Search worktrees", text: $store.search)
                 .textFieldStyle(.plain).accessibilityLabel("Search worktrees")
                 .focused($searchFocused)
-                .onSubmit { if let first = store.visibleItems.first { Task { await store.open(first) } } }
+                .onSubmit { Task { await store.openHighlighted() } }
             if !store.search.isEmpty {
                 Button { store.search = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary) }
                     .buttonStyle(.plain).accessibilityLabel("Clear search")
@@ -47,6 +61,9 @@ struct WorktreeMenuView: View {
                     get: { store.preferences.groupByRepository },
                     set: { store.setGroupByRepository($0) }
                 ))
+                Button("Open Previous Worktree") { Task { await store.openPrevious() } }
+                    .keyboardShortcut(.return, modifiers: [.command, .shift])
+                    .disabled(store.previousItem == nil)
                 Divider()
                 Button("Refresh") { Task { await store.refresh() } }.keyboardShortcut("r")
                 Divider()
@@ -63,7 +80,8 @@ struct WorktreeMenuView: View {
 
     private var content: some View {
         let byID = Dictionary(uniqueKeysWithValues: store.filteredItems.map { ($0.id, $0) })
-        return ScrollView {
+        return ScrollViewReader { proxy in
+            ScrollView {
             LazyVStack(spacing: 1) {
                 ForEach(store.worktreeSections) { section in
                     if let title = section.title {
@@ -72,11 +90,15 @@ struct WorktreeMenuView: View {
                     ForEach(section.worktrees) { worktree in
                         if let item = byID[worktree.id] {
                             WorktreeRowView(item: item, store: store, showDetails: showDetails,
-                                            isRepositoryGroup: section.isRepositoryGroup)
+                                            isRepositoryGroup: section.isRepositoryGroup).id(item.id)
                         }
                     }
                 }
             }.padding(5)
+            }
+            .onChange(of: store.highlightedID) { _, id in
+                if let id { proxy.scrollTo(id) }
+            }
         }
         // Search changes the contents, not the panel's size. Keeping the scroll
         // container alive also preserves the hosting window's layout and clipping.
@@ -84,6 +106,22 @@ struct WorktreeMenuView: View {
         .overlay {
             if store.filteredItems.isEmpty { emptyState }
         }
+    }
+
+    private var keyboardFooter: some View {
+        HStack(spacing: 5) {
+            Text("↑ ↓").font(.system(size: 11, design: .monospaced))
+            Text("Choose").font(.system(size: 10))
+            Spacer(minLength: 8)
+            if let item = store.highlightedItem {
+                Text("Open in \(store.editorName(for: item))").font(.system(size: 10)).lineLimit(1)
+                Image(systemName: "return").font(.system(size: 10, weight: .medium))
+            }
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 13).padding(.vertical, 8)
+        .overlay(alignment: .top) { Divider() }
+        .accessibilityElement(children: .combine)
     }
 
     private var contentHeight: CGFloat {
@@ -146,6 +184,7 @@ struct WorktreeMenuView: View {
 struct MenuPresentationActions {
     let showSettings: () -> Void
     let showDetails: () -> Void
+    var dismiss: () -> Void = {}
 }
 
 /// One glass surface samples the desktop directly through the transparent panel.

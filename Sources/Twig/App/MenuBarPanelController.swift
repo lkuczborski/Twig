@@ -15,6 +15,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private var localEventMonitor: Any?
     private var menuObservers: [NSObjectProtocol] = []
     private var trackingMenus = 0
+    private var globalShortcut: GlobalShortcutService?
 
     init(store: TwigStore) {
         self.store = store
@@ -34,7 +35,8 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         panel.animationBehavior = .none
         panel.contentView = NSHostingView(rootView: WorktreeMenuView(store: store, presentation: MenuPresentationActions(
             showSettings: { [weak self] in self?.showSettings() },
-            showDetails: { [weak self] in self?.showDetails() }))
+            showDetails: { [weak self] in self?.showDetails() },
+            dismiss: { [weak self] in self?.dismiss() }))
             .onGeometryChange(for: CGSize.self) { $0.size } action: { [weak self] size in
                 self?.resize(to: size)
             })
@@ -50,6 +52,10 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         statusItem.isVisible = true
         statusItem.button?.setAccessibilityLabel("Twig")
         observeMenus()
+        let shortcut = GlobalShortcutService { [weak self] in self?.togglePanel() }
+        globalShortcut = shortcut
+        store.onGlobalShortcutChange = { [weak shortcut] in shortcut?.configure($0) }
+        store.shortcutError = shortcut.configure(store.preferences.globalShortcut)
     }
 
     @objc func showSettings() {
@@ -116,7 +122,8 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         preview.title = "Twig Preview"
         preview.contentView = NSHostingView(rootView: WorktreeMenuView(store: store, presentation: MenuPresentationActions(
             showSettings: { [weak self] in self?.showSettings() },
-            showDetails: { [weak self] in self?.showDetails() })))
+            showDetails: { [weak self] in self?.showDetails() },
+            dismiss: { [weak self] in self?.previewWindow?.orderOut(nil) })))
         preview.isReleasedWhenClosed = false
         preview.center()
         preview.makeKeyAndOrderFront(nil)
@@ -128,6 +135,8 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
 
     func shutdown() {
         dismiss()
+        globalShortcut?.stop()
+        store.onGlobalShortcutChange = nil
         menuObservers.forEach(NotificationCenter.default.removeObserver)
         menuObservers.removeAll()
         NSStatusBar.system.removeStatusItem(statusItem)
@@ -182,7 +191,10 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
                         default: break
                         }
                     }
-                    if event.keyCode == 53, self.trackingMenus == 0 { self.dismiss(); return true }
+                    if event.keyCode == 53, self.trackingMenus == 0,
+                       (self.panel.firstResponder as? NSTextView)?.hasMarkedText() != true {
+                        self.dismiss(); return true
+                    }
                 } else if event.window !== self.panel, self.trackingMenus == 0,
                           self.statusButtonRect?.contains(NSEvent.mouseLocation) != true {
                     self.dismiss()
