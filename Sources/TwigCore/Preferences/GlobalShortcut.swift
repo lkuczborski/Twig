@@ -21,7 +21,7 @@ public struct GlobalShortcut: Codable, Equatable, Sendable {
         self.keyLabel = keyLabel
     }
 
-    public static let `default` = Self(keyCode: 49, modifiers: [.control, .option], keyLabel: "Space")
+    public static let `default` = Self(keyCode: 17, modifiers: [.control, .shift], keyLabel: "T")
 
     public var isValid: Bool {
         keyCode < 128 && !modifiers.intersection([.command, .option, .control]).isEmpty

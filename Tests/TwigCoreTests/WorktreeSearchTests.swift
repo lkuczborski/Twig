@@ -73,6 +73,7 @@ struct WorktreeSearchTests {
         #expect(decoded.globalShortcut == preferences.globalShortcut)
         #expect(decoded.globalShortcut?.displayName == "⌃⇧T")
         #expect(GlobalShortcut.default.isValid)
+        #expect(GlobalShortcut.default.displayName == "⌃⇧T")
         #expect(!GlobalShortcut(keyCode: 17, modifiers: [.shift], keyLabel: "T").isValid)
         #expect(!GlobalShortcut(keyCode: 500, modifiers: [.control], keyLabel: "T").isValid)
     }
