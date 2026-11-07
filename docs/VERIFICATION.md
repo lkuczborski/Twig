@@ -2,11 +2,13 @@
 
 ## Unreleased menu-bar presentation — 7 November 2026
 
-The status button uses AppKit's native `highlight(_:)` API, with a coalesced refresh in the default run-loop mode after mouse and menu tracking finishes. Its factory button behavior is preserved, including cancelled clicks. Selection follows the visible worktree panel or an active Twig window and clears when no corresponding surface is active. Shutdown removes the tracking monitor and observers.
+On macOS 27, the status item uses `NSStatusItemExpandedInterfaceDelegate` to associate the custom worktree panel with AppKit's expanded-interface session. AppKit's begin/end callbacks show and hide the panel; explicit dismissal cancels the session. Older macOS versions keep the existing button target/action path. The earlier state/highlight retry experiments are removed, and search focus behavior is unchanged.
 
 The panel opens from the status button's left edge if it fits, otherwise aligns the right edges, with a screen-bounds fallback. It uses the status button's own screen and global AppKit coordinates, preserving nonzero screen origins.
 
-The preview build compiled. Opening the actual menu panel from Welcome produced `highlighted=true`; runtime geometry showed the panel and status button both at x=1072, with the 360-point panel fully inside the 1512-point visible screen. Native window checks cover activation, Settings/preview transitions, app inactivity, and closing the last window. The normal build compiled and passed launch verification with real discovery settings. The rendered highlight after a physical status-button click, right-edge fallback on a repositioned icon, multiple displays, and older macOS versions remain outside automated verification. The earlier generic-button-state check did not verify the native background and was superseded by this correction.
+The user confirmed edge alignment in the running build. Native geometry also showed the panel and status button both at x=1072, with the 360-point panel fully inside the 1512-point visible screen. The session-based normal build compiled and passed launch verification with real discovery settings. The user then confirmed that the icon stays visibly highlighted after clicking it, including while typing in search. Logical `state`/`isHighlighted` values alone did not verify the system-rendered background in earlier attempts. Right-edge fallback on a repositioned icon, multiple displays, and older macOS versions remain outside completed verification.
+
+The global shortcut retains direct panel presentation as a fallback: macOS 27's session API has no public begin method. A programmatic button click is attempted first, but a visible session highlight from shortcut activation is not assumed. Auxiliary Settings, Welcome, and details windows do not create an expanded-interface session.
 
 ## Unreleased worktree details — 7 November 2026
 
