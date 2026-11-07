@@ -3,73 +3,69 @@
 </p>
 
 <h1 align="center">Twig</h1>
-<p align="center"><strong>Your worktrees. The right editor. One click.</strong></p>
-<p align="center">A small native macOS menu-bar app for getting back to your projects.</p>
+<p align="center"><strong>Your worktrees. One shortcut away.</strong></p>
+<p align="center">A small native macOS menu-bar app for getting back to the right project in the right editor.</p>
 <p align="center">
-  <a href="https://github.com/lkuczborski/Twig/releases/latest">Download</a> ·
-  <a href="#how-it-works">How it works</a> ·
+  <a href="https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip">Download v0.2</a> ·
+  <a href="https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-twitter.mp4">Watch the intro</a> ·
   <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="LICENSE">MIT License</a>
 </p>
 
 <p align="center">
-  <img src="docs/assets/twig-menu.png" width="360" alt="Twig's menu showing example worktrees and their Git branches">
-  <br><sub>Native SwiftUI, with Liquid Glass on macOS 26. Demonstration repositories shown.</sub>
+  <img src="docs/assets/twig-menu.png" width="360" alt="Twig showing pinned worktrees, repository groups, personal labels, and keyboard navigation">
+  <br><sub>Actual native interface with demonstration repositories. Liquid Glass on macOS 26.</sub>
 </p>
 
 ## Pick up where you left off
 
-Codex worktrees are useful until you have to hunt through folders to find the right checkout. The stable **v0.1** release puts your recent worktrees and their current Git branches in the menu bar, figures out which editor fits each project, and opens the right target when you click.
+Press **Control–Shift–T**, type a few letters, and open the worktree you need. Twig finds your Codex worktrees automatically, lets you add other local Git repositories, and detects the right editor and project target for each checkout.
 
-- **Open the project, not just its folder.** Xcode workspaces, IDE project files, and nested project targets are detected automatically.
-- **Keep the choice yours.** Override an editor or project target for any individual worktree. Every suggestion has an explanation.
-- **Find it quickly.** Search project names, branches, paths, or editors. Press Return to open the first match.
-- **Get to Finder.** Option-click a row to open its folder. More actions let you reveal its enclosing folder or copy its path.
-- **Stay current without polling.** Filesystem events invalidate cached results. Closed menus collect pending changes without rescanning.
-- **Keep it local.** No account, analytics, cloud service, or project-code execution. Twig does not read Codex conversations or credentials.
+**Twig v0.2** makes that everyday workflow faster:
 
-## Install the stable release
+- **Stay on the keyboard.** Use a configurable global shortcut, fuzzy search, arrow-key selection, and Return to open. Jump back to your previous worktree with **Shift–Command–Return**.
+- **Recognize your work.** Pin active worktrees, group them by repository, and give them personal labels. Search includes those labels, and long branch names keep their distinctive endings visible.
+- **Choose your tools.** Open once in another supported installed editor, save an editor for a whole repository, or open Apple's Terminal in the selected worktree. Individual worktree choices still take priority.
+- **Bring your repositories.** Add a local checkout or bare Git repository to discover its existing worktrees alongside Codex. Unavailable sources stay visible in Settings; removing a source leaves its files on disk.
+- **Get started quickly.** Welcome shows a scrollable list of discovered worktrees, explains the shortcut, and offers optional launch at login. Reopen it from Settings at any time.
 
-1. [Download Twig v0.1](https://github.com/lkuczborski/Twig/releases/download/v0.1/Twig-v0.1-macos-universal.zip).
+Twig still opens the project itself—including Xcode workspaces and nested project targets—rather than making you find it inside a folder. Every automatic suggestion has an explanation and can be overridden.
+
+## Install
+
+1. [Download Twig v0.2](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip).
 2. Unzip it and move **Twig.app** to **Applications**.
-3. Open Twig and look for the branch symbol in your menu bar.
+3. Open Twig. The welcome window introduces your worktrees; the branch symbol stays in your menu bar.
 
 **macOS 14 or later · Apple Silicon and Intel · Developer ID signed and notarized**
 
-Twig lives in the menu bar and has no Dock icon. Liquid Glass is available on macOS 26; earlier versions use a native translucent material. [SHA-256 checksum](https://github.com/lkuczborski/Twig/releases/download/v0.1/Twig-v0.1-macos-universal.zip.sha256).
+Twig has no Dock icon. Liquid Glass is available on macOS 26; earlier versions use native translucent material. Launch at login is optional and can be changed in Settings. [SHA-256 checksum](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip.sha256).
 
-## Next-version preview
+**Upgrading from v0.1:** quit Twig and replace the app in Applications. Your saved Codex home, editor choices, and open history are preserved. New settings receive defaults, and the welcome window introduces the new workflow. Automatic updates are not yet included.
 
-The development version on **`main`** combines five feature worktrees, integrated on `codex/next-preview`. **v0.1 remains the published download**; these changes have not been released.
+Read the [v0.2 release notes](docs/RELEASE_NOTES_v0.2.md). The release also includes a [35-second intro video](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-twitter.mp4) and its [editable Remotion source](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-remotion.zip).
 
-- **Move through work by keyboard.** Configurable **Control–Shift–T** opens Twig. Fuzzy search, arrow-key selection, Return, and a previous-worktree action complete the keyboard workflow. Paths use literal matching so unrelated directory prefixes do not crowd the results.
-- **Recognize the right checkout.** Pin active worktrees, group siblings by repository, and add personal labels. Long branch names keep their distinctive endings through middle truncation.
-- **Get started quickly.** Welcome shows discovered worktrees, explains the shortcut, and offers a native launch-at-login setting. Welcome can be reopened from Settings.
-- **Choose how to open.** Try an installed editor once, save an editor for the whole repository, or open Apple's Terminal. Worktree choices take priority over repository defaults; each checkout resolves its own project target.
-- **Bring other Git repositories.** Add a checkout or bare repository to discover its existing linked worktrees alongside Codex. Saved unavailable roots remain visible in Settings. Removing a discovery source leaves its files on disk.
+## Keyboard and actions
 
-| Preview shortcut | Action |
+| Shortcut | Action |
 | --- | --- |
-| ⌃⇧T | Show or hide Twig from another app; configurable in Settings |
+| ⌃⇧T | Show or hide Twig from any app; configurable in Settings |
 | ↑ / ↓ | Select the previous or next visible worktree |
-| Return | Open the selected result |
+| Return | Open the selected worktree |
 | ⇧⌘Return | Reopen the previous successfully opened worktree |
+| Option-click | Open the worktree folder in Finder |
+| ⌘R | Refresh |
+| ⌘, | Settings |
 | Escape | Dismiss Twig |
+| ⌘Q | Quit Twig |
 
-From a development checkout, run the native app with invented repositories and separate demo preferences:
+Only the configurable global shortcut works from another app; the other keyboard shortcuts apply while Twig is focused. The gear menu contains grouping, the previous-worktree action, **Add Repository…**, Settings, and Quit. Each row's actions menu contains pins, labels, opening choices, Finder actions, path copying, and **Project & detection details**.
 
-```sh
-./script/build_and_run.sh --demo          # Menu preview with sample worktrees
-./script/build_and_run.sh --demo-welcome  # Include the first-run welcome window
-```
-
-Each command creates fresh Git fixtures under `dist/demos/`; the sample content contains no personal projects or conversations. The demo uses real installed editors and real macOS login-item controls. Normal `./script/build_and_run.sh` uses your saved Twig preferences. Preview builds are locally ad-hoc signed.
-
-See the [preview manifest and validation limits](docs/features/NEXT_VERSION.md) for feature branches, observed UI checks, and release validation limits. Terminal’s working directory and installed login-item registration/removal were verified locally. The user has confirmed that Control–Shift–T opens the preview from another application.
+Fuzzy search covers project names, branches, personal labels, and editor names. Folder paths use literal matching to keep shared directory prefixes from producing unrelated matches.
 
 ## How it works
 
-The published v0.1 discovers existing local checkouts under your Codex home, reads Git metadata for their branch names, and inspects project structure and small configuration snippets to suggest an installed editor. It opens URLs through macOS rather than running project scripts or shell launch commands. The preview also combines explicitly added Git repositories with this discovery source.
+Twig reads local Git metadata and inspects project structure and small configuration snippets to suggest an installed editor. It opens project and directory URLs through macOS. Discovery never runs project scripts, build tools, or hooks.
 
 | Project evidence | Examples of suggested editors |
 | --- | --- |
@@ -79,24 +75,17 @@ The published v0.1 discovers existing local checkouts under your Codex home, rea
 | Android, Flutter, .NET, game projects | Android Studio, Rider |
 | R projects and other source folders | RStudio or an installed general editor |
 
-A saved worktree choice takes priority over detection. In the preview, a repository editor default sits between the worktree choice and detection. If no suitable installed editor is found, Twig falls back to your chosen editor or Finder. Mixed repositories expose their detected targets in **Project & detection details**.
+A saved worktree choice takes priority, followed by a repository editor choice, project detection, and your fallback editor. An installed general editor or Finder handles projects without another match. Repository choices resolve the project target inside each checkout. **Open once with…** leaves saved editor choices intact. Mixed repositories expose their detected targets in **Project & detection details**.
 
-The default location is `~/.codex/worktrees`, or `$CODEX_HOME/worktrees` when supplied at launch. Choose another Codex home in Settings. Only existing local worktrees appear; archived, deleted, and remote worktrees are not reconstructed. “Recent” means observed filesystem/Git activity or the last successful open through Twig, rather than chat activity.
+Codex discovery uses `~/.codex/worktrees`, or `$CODEX_HOME/worktrees` when supplied at launch. Choose another Codex home in Settings, or use **Add Repository…** for other local repositories. Only existing local checkouts appear; archived, deleted, and remote worktrees are not reconstructed. “Recent” means observed filesystem/Git activity or the last successful open through Twig, rather than chat activity.
 
-| Stable v0.1 shortcut | Action |
-| --- | --- |
-| Return | Open the first search result |
-| Option-click | Open the worktree folder in Finder |
-| ⌘R | Refresh |
-| ⌘, | Settings |
-| Escape | Dismiss Twig |
-| ⌘Q | Quit Twig |
+Filesystem events invalidate cached results. Closed menus collect pending changes without rescanning, and unchanged openings reuse cached results. Manual refresh remains available.
 
-Keyboard shortcuts apply while Twig is focused. Settings and Quit are also in the gear menu.
+**Local. Private. Yours.** No account, analytics, or cloud service. Twig does not read Codex conversations or credentials. Pins, labels, editor choices, and discovery sources are saved locally; labels do not rename Git branches or folders.
 
 ## Build from source
 
-Build and release with **Xcode 27.1**. CI selects this version explicitly. The app still runs on macOS 14 or later, and has no third-party package dependencies.
+Develop with **Xcode 27.1 or 27.2**. CI checks Xcode 27.1; the v0.2 release workflow pins Xcode 27.2. The app runs on macOS 14 or later and has no third-party package dependencies.
 
 ```sh
 git clone https://github.com/lkuczborski/Twig.git
@@ -105,9 +94,18 @@ cd Twig
 ./script/test.sh
 ```
 
-The build script stages a local development app in `dist/Twig.app`. A separate [release workflow](docs/RELEASING.md) builds both architectures, signs, notarizes, staples, and checks the extracted archive before publication.
+The run script stages an ad-hoc signed development app in `dist/Twig.app` and opens it using your saved Twig preferences. Use `./script/build_and_run.sh --build` to build without launching. The separate [release workflow](docs/RELEASING.md) builds both architectures, signs, notarizes, staples, and checks the extracted archive before publication.
 
-Read the [development guide](docs/DEVELOPMENT.md), [architecture](docs/ARCHITECTURE.md), and [verification notes](docs/VERIFICATION.md) for the released foundation. The [preview manifest](docs/features/NEXT_VERSION.md) records the new features and their validation status; the [roadmap](docs/ROADMAP.md) separates those from future work. Ideas and reproducible bug reports are welcome in [Issues](https://github.com/lkuczborski/Twig/issues).
+To explore the actual interface using invented repositories and separate demo preferences:
+
+```sh
+./script/build_and_run.sh --demo          # Menu with sample worktrees
+./script/build_and_run.sh --demo-welcome  # Include the welcome window
+```
+
+Each demo creates fresh Git fixtures under `dist/demos/`; it does not copy personal projects or conversations. Demo mode still uses real installed editors and real macOS login-item controls.
+
+Read the [development guide](docs/DEVELOPMENT.md), [architecture](docs/ARCHITECTURE.md), [verification notes](docs/VERIFICATION.md), and [roadmap](docs/ROADMAP.md). Ideas and reproducible bug reports are welcome in [Issues](https://github.com/lkuczborski/Twig/issues).
 
 ## License
 

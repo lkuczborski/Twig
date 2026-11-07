@@ -4,7 +4,7 @@ The app identifier is `com.luku.Twig`. `Support/Info.plist` is the shared source
 
 ## Prerequisites
 
-- Xcode 27.1 selected through `xcode-select` or `DEVELOPER_DIR`, and an unlocked Keychain.
+- Xcode 27.2 selected through `xcode-select` or `DEVELOPER_DIR`, and an unlocked Keychain.
 - A valid **Developer ID Application** signing identity.
 - An authenticated `notarytool` Keychain profile for the same Apple developer team.
 - A clean, committed checkout and the checked-in logo exports.
@@ -13,20 +13,20 @@ Credentials stay in Keychain. Do not put passwords, certificates, private keys, 
 
 ## Build and verify
 
-Update `CFBundleShortVersionString` and `CFBundleVersion` in `Support/Info.plist`, then commit the release changes. The `v0.1` Git tag corresponds to bundle version `0.1.0`, build `1`.
+Update `CFBundleShortVersionString` and `CFBundleVersion` in `Support/Info.plist`, then commit the release changes. The `v0.2` Git tag corresponds to bundle version `0.2.0`, build `2`. The earlier v0.1 release used Xcode 27.1; v0.2 is built with Xcode 27.2.
 
 ```sh
-./script/release.sh v0.1 \
+./script/release.sh v0.2 \
   --signing-identity "Developer ID Application: Your Name (TEAMID)" \
   --notary-profile "your-keychain-profile"
 ```
 
-The script checks for Xcode 27.1, runs the release tests, builds a universal `arm64`/`x86_64` executable, stages `Twig.app` with its icon and MIT license, enables hardened runtime, and signs with a secure timestamp. It submits a ZIP to Apple's notary service, saves the result and log under ignored `dist/release/v0.1/`, staples the accepted ticket, and checks Gatekeeper acceptance. It then recreates the ZIP so the download includes the stapled ticket, writes a SHA-256 checksum, extracts it into a temporary directory, and checks its signature, staple, and Gatekeeper acceptance again.
+The script checks for Xcode 27.2, runs the release tests, builds a universal `arm64`/`x86_64` executable, stages `Twig.app` with its icon and MIT license, enables hardened runtime, and signs with a secure timestamp. It submits a ZIP to Apple's notary service, saves the result and log under ignored `dist/release/v0.2/`, staples the accepted ticket, and checks Gatekeeper acceptance. It then recreates the ZIP so the download includes the stapled ticket, writes a SHA-256 checksum, extracts it into a temporary directory, and checks its signature, staple, and Gatekeeper acceptance again.
 
 Output:
 
-- `dist/release/Twig-v0.1-macos-universal.zip`
-- `dist/release/Twig-v0.1-macos-universal.zip.sha256`
+- `dist/release/Twig-v0.2-macos-universal.zip`
+- `dist/release/Twig-v0.2-macos-universal.zip.sha256`
 
 The script refuses to overwrite an existing release output. Keep submission metadata if a network interruption requires investigating or waiting for an existing submission; do not keep resubmitting an in-progress build. Inspect Apple's saved notarization log for warnings before publishing. Never upload the unstapled intermediate ZIP.
 

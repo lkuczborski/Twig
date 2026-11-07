@@ -1,0 +1,40 @@
+{
+  "name": "twig-intro",
+  "version": "0.2.0",
+  "description": "Editable Remotion introduction to Twig v0.2 for macOS.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lkuczborski/Twig.git",
+    "directory": "media/intro"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.541",
+    "@remotion/transitions": "4.0.541",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.541"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.541",
+    "@types/react": "19.3.0",
+    "@types/web": "0.0.166",
+    "eslint": "10.12.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio --no-open",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "render": "remotion render TwigIntro out/Twig-intro-v0.2.mp4 --codec=h264 --pixel-format=yuv420p"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
+}

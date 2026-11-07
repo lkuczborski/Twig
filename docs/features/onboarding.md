@@ -4,6 +4,6 @@ The first launch presents a compact native welcome window with live discovery re
 
 Launch at login uses `SMAppService.mainApp`. The service's status is the source of truth, including a pending-approval state with a link to Login Items. Views recheck status when the application becomes active. Login registration is never enabled automatically.
 
-Validation: development app builds successfully; preference round-trip and legacy/unknown-schema tests pass. Runtime welcome/layout capture and combined feature verification are performed on the preview integration branch. A real logout/login cycle is outside automated checks.
+Validation: development app builds successfully; preference round-trip and legacy/unknown-schema tests pass. Welcome/layout and scroll overflow were checked in the combined build. Installed Developer ID signed-app login registration and removal passed; the original disabled state was restored. A real logout/login cycle is outside automated checks.
 
 Manual checks: launch with fresh preferences; inspect detected worktrees; Open Twig; relaunch and confirm the welcome stays dismissed; reopen Welcome through Settings. On an installed signed build, enable/disable launch at login and confirm System Settings reflects the state.

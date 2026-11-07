@@ -1,6 +1,6 @@
-# Next-version preview
+# v0.2 feature and verification record
 
-This manifest describes local development work reviewed on **7 November 2026**. **Twig v0.1 remains the published stable release.** The five feature worktrees were integrated on `codex/next-preview` for merging into `main`. A local Developer ID signed build was installed at `/Applications/Twig.app` and opened with saved preferences and real worktrees. No new release has been published, uploaded, or notarized.
+This record describes the five feature worktrees integrated into **Twig v0.2** on **7 November 2026**. The combined branch was merged into `main`; the release is version **0.2.0**, build **2**. See the [release notes](../RELEASE_NOTES_v0.2.md) and [distribution verification](../VERIFICATION.md) for release status and checks.
 
 ## Feature branches and worktrees
 
@@ -13,7 +13,7 @@ This manifest describes local development work reviewed on **7 November 2026**. 
 | Git repositories | `codex/git-repositories` | `twig-git-repositories/Twig` | [Additional roots and linked checkouts](git-repositories.md) |
 | Combined preview | `codex/next-preview` | `twig-next-preview/Twig` | All features plus integration fixes and the capture harness |
 
-Worktree paths in the table are relative to the local managed worktree directory. The original `main` checkout is the final build location. These are local branches; the table does not imply that they have been pushed to GitHub.
+Worktree paths in the table are relative to the local managed worktree directory. The original `main` checkout is the final build location. Feature branches preserve the separate implementation history; `main` contains the integrated release.
 
 ## Run the native preview
 
@@ -55,7 +55,7 @@ The following checks were observed in the actual running combined preview:
 - The normal build read existing preferences, discovered 22 real worktrees, and scrolled its full welcome list. Existing editor choices and open history were retained.
 - **Add Repository…** used the native folder picker. Adding the sample Atlas root found its four checkouts and merged linked checkouts already present through Codex discovery.
 
-These checks use synthetic repositories and isolated Twig preferences. Native screenshots and an 18-second walkthrough assembled from those captured app states are saved in the original checkout's ignored `dist/feature-previews` directory. The gallery is `index.html` and the video is `Twig-next-preview.mp4`; per-feature notes are linked above.
+These checks use synthetic repositories and isolated Twig preferences. The original internal capture gallery is retained locally under ignored `dist/feature-previews`. The public 35-second intro uses clean native window captures with CleanShot framing; its sanitized Remotion source is versioned in [`media/intro`](../../media/intro) and the MP4 is attached to v0.2. Per-feature notes are linked above.
 
 ## Combined regression result
 
@@ -66,6 +66,6 @@ The final combined regression run (after the login guidance correction, outside 
 - Global shortcut registration reported no error, and the user verified hardware invocation from another app. Targeted UI-automation key injection alone did not activate the Carbon hotkey; it is not the evidence for that confirmation.
 - Terminal’s actual working directory was verified through read-only process metadata: both descendant shells had the exact sample checkout as cwd; Git confirmed `fix/sidebar-keyboard-navigation`, and the saved open timestamp matched Terminal startup. No Terminal UI inspection was used. Special-character directory handling has core fixture coverage; live dispatch used an ordinary fixture path.
 - Installed Developer ID signed-app registration and removal passed. macOS enabled the item immediately, so an approval-required state was not exercised. A full logout/reboot was not performed during this active session.
-- VoiceOver, multiple displays, older supported macOS versions, Intel hardware, universal release packaging, and notarization remain separate validation work.
+- VoiceOver, multiple displays, older supported macOS versions, and Intel hardware remain separate validation work. Universal packaging, signing, and notarization are covered by the v0.2 distribution workflow.
 
-Automatic updates, remote CI/PR status, and worktree cleanup are not implemented. This preview performs no release publishing.
+Automatic updates, remote CI/PR status, and worktree cleanup remain future work. The [release workflow](../RELEASING.md) owns distribution packaging and publishing.

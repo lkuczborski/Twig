@@ -15,7 +15,7 @@ Search accepts partial, case-insensitive, accent-insensitive words and subsequen
 - `./script/build_and_run.sh --build` passes with Xcode's Swift 6 toolchain targeting macOS 14 and later.
 - `./script/test.sh` passes all **82 tests**, including seven new checks for fuzzy ranking, multi-field queries, path-prefix false positives, accents and repeated characters, stable selection, previous-worktree history, and old/disabled shortcut preferences. The real FSEvents tests passed outside the sandbox.
 - Runtime UI verification and screenshots are performed on the combined preview branch. Suggested checks: invoke the global shortcut from another app; type a fuzzy query; move beyond the visible viewport with arrows; Return opens the selected result; Escape dismisses; native row menus retain their own navigation; record/reset/disable the shortcut; open A then B, then use Shift–Command–Return to return to A.
-- The combined preview successfully recorded Control–Shift–T without a registration error. The UI automation tool's targeted key injection did not reach Carbon hotkeys, so actual global firing has not been verified through that tool.
+- The combined preview recorded Control–Shift–T without a registration error. The user confirmed physical invocation from another app; targeted UI-automation key injection is not the evidence for that confirmation.
 
 ## Integration
 

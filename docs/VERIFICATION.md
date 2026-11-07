@@ -1,10 +1,18 @@
 # Twig verification
 
-## Final next-version checks — 7 November 2026
+## v0.2 distribution — 7 November 2026
 
-All 124 tests passed again (104 core and 20 sync), with real FSEvents tests run outside the tool sandbox. Terminal’s descendant shells had the exact fixture checkout as their working directory, corroborated by Git metadata and saved open time. A Developer ID signed build installed in Applications registered and unregistered launch at login successfully; the original off state was restored. A full sign-out/reboot and an approval-required state were not exercised. The normal build discovered 22 real worktrees with existing preferences; welcome overflow scrolled correctly. See [the next-version manifest](features/NEXT_VERSION.md) for details.
+The v0.2 archive contains **Twig 0.2.0, build 2**, built in release configuration with **Xcode 27.2** for both **arm64 and x86_64**. The release pipeline runs the 124-test suite, signs with Developer ID and hardened runtime, obtains Apple's notarization approval, staples the ticket, and checks Gatekeeper acceptance both before and after extracting the final ZIP. The downloadable ZIP and SHA-256 checksum are attached to [v0.2](https://github.com/lkuczborski/Twig/releases/tag/v0.2).
 
-The next-version preview was checked on **7 November 2026**: **124 tests pass** (104 core and 20 sync, including real FSEvents), and the combined native demo builds and runs. Keyboard navigation, exact Finder/Xcode opening, label/pin persistence, repository defaults, additional Git roots, and the scrollable welcome were exercised in the running app. The user confirmed the global shortcut from another app. See [the preview verification record](features/NEXT_VERSION.md) for branch details, captures, and the remaining installed-app login-item and Terminal working-directory checks. The historical v0.1 verification follows.
+The signed release is a normal build: it has no `TWIG_PREVIEW` demo preference override. CI continues to exercise Xcode 27.1. Producing an Intel slice does not constitute testing on Intel hardware. VoiceOver, multiple displays, older supported macOS versions, the login approval-required state, and a full sign-out/sign-in cycle remain outside this verification.
+
+## v0.2 application checks — 7 November 2026
+
+All 124 tests passed again (104 core and 20 sync), with real FSEvents tests run outside the tool sandbox. Terminal’s descendant shells had the exact fixture checkout as their working directory, corroborated by Git metadata and saved open time. A Developer ID signed build installed in Applications registered and unregistered launch at login successfully; the original off state was restored. A full sign-out/reboot and an approval-required state were not exercised. The normal build discovered 22 real worktrees with existing preferences; welcome overflow scrolled correctly. See [the v0.2 feature record](features/NEXT_VERSION.md) for details.
+
+Native checks covered keyboard navigation, exact Finder/Xcode opening, label/pin persistence, repository defaults, additional Git roots, and the scrollable welcome. The user confirmed the global shortcut from another app. See the [v0.2 feature record](features/NEXT_VERSION.md) for branch details and validation limits.
+
+The historical v0.1 verification follows; the test counts in that record refer to the earlier release.
 
 Validated locally on Apple Silicon macOS 27, Swift 6.4 / Xcode. MVP checks were performed on 29 September 2026; the minimal UI and event-driven syncing iteration was checked on 1 October 2026.
 

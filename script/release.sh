@@ -6,9 +6,9 @@ usage() {
 Usage: script/release.sh <tag> --signing-identity <identity> --notary-profile <profile>
 
 Build a universal Twig.app, Developer ID sign, notarize, staple, and verify it.
-<tag> must match Support/Info.plist (v0.1 also matches bundle version 0.1.0).
+<tag> must match Support/Info.plist (v0.2 also matches bundle version 0.2.0).
 Identity/profile can also be supplied as TWIG_SIGNING_IDENTITY/TWIG_NOTARY_PROFILE.
-Requires Xcode 27.1 and a clean Git checkout. Does not publish or modify Git tags.
+Requires Xcode 27.2 and a clean Git checkout. Does not publish or modify Git tags.
 EOF
 }
 die() { echo "error: $*" >&2; exit 1; }
@@ -24,7 +24,7 @@ while [[ $# -gt 0 ]]; do
         *) [[ -z "$VERSION" ]] || die "provide one version"; VERSION="$1"; shift ;;
     esac
 done
-[[ "$VERSION" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || die "provide a release tag such as v0.1"
+[[ "$VERSION" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || die "provide a release tag such as v0.2"
 [[ "$SIGNING_IDENTITY" == "Developer ID Application:"* ]] || die "provide a Developer ID Application identity"
 [[ -n "$NOTARY_PROFILE" ]] || die "provide a notarytool Keychain profile"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +32,7 @@ cd "$ROOT_DIR"
 source "$ROOT_DIR/script/toolchain.sh"
 source "$ROOT_DIR/script/bundle.sh"
 XCODE_VERSION="$(xcodebuild -version | /usr/bin/awk '/^Xcode / { print $2 }')"
-[[ "$XCODE_VERSION" == 27.1 ]] || die "select Xcode 27.1 before releasing (found $XCODE_VERSION)"
+[[ "$XCODE_VERSION" == 27.2 ]] || die "select Xcode 27.2 before releasing (found $XCODE_VERSION)"
 echo "Release toolchain: Xcode $XCODE_VERSION"
 [[ -z "$(git status --porcelain)" ]] || die "commit changes before releasing"
 PLIST_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Support/Info.plist)"

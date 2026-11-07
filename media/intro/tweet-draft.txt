@@ -1,0 +1,8 @@
+Meet the next Twig 🌱
+• Global shortcut, fuzzy search & keyboard navigation
+• Pins, labels & repo groups
+• Jump to your previous worktree
+• Open-once editors, repo defaults & Terminal
+• Any local Git repo
+• Scrollable welcome + launch at login
+Local. Native. Yours.

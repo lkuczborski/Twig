@@ -1,12 +1,12 @@
 # Developing Twig
 
-A native macOS menu bar app for picking up a Codex worktree in the right editor.
+A native macOS menu bar app for opening Codex and other local Git worktrees in the right editor.
 
 Twig discovers active local Codex worktrees, reads their current Git branches, and ranks launch targets from project files and editor configuration. Click a row to open its suggested project. The actions menu lets you remember an editor, choose a specific detected project, open the folder in Finder, reveal it in its enclosing folder, or copy its path.
 
 ## Run
 
-Builds and releases use Xcode 27.1. The deployment target remains macOS 14. No third-party dependencies.
+Development supports Xcode 27.1 and 27.2. CI selects Xcode 27.1; the v0.2 release script requires Xcode 27.2. The deployment target remains macOS 14. No third-party dependencies.
 
 ```sh
 ./script/build_and_run.sh
@@ -25,10 +25,11 @@ Optional `--debug`, `--logs`, and `--telemetry` modes are supported by the run s
 
 ## Use
 
-- Search by project, branch, folder path, or selected editor. Return opens the first match.
+- Press Control–Shift–T from another app, then fuzzy-search project names, branches, personal labels, or selected editors. Folder paths use literal matching. Arrow keys choose the result; Return opens it. Shift–Command–Return reopens the previous successful worktree.
 - Click a worktree to launch the chosen IDE with the correct project, workspace, manifest, or folder URL.
 - Option-click a worktree to open its folder in Finder.
-- Use **Always open with** to save an installed editor for this worktree. **Automatic** removes the override.
+- Use **Worktree editor** or **Repository editor** to save an installed editor for that scope. **Automatic** removes the override; **Open once with…** leaves saved choices intact. **Open in Terminal** opens the current worktree directory.
+- Pin worktrees, add personal labels, and group by repository. Use **Add Repository…** to include local checkout or bare-repository roots alongside Codex. Welcome and optional launch at login are available in Settings.
 - Use **Project & detection details** to see the complete branch and path, the reason for each suggestion, and choose a particular nested project.
 - Settings lets you change Codex home and choose a fallback editor. An explicit worktree override takes priority; unavailable overrides produce a helpful error.
 - The compact menu shows only search, repository names, branch names, and action menus. Settings and Quit are in the gear menu.
