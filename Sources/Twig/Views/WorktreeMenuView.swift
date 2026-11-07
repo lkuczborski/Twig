@@ -120,7 +120,7 @@ struct WorktreeMenuView: View {
         // Size from the unfiltered catalog to keep the search field anchored.
         let sections = store.catalogSections
         let headerCount = sections.filter { $0.title != nil }.count
-        return store.items.isEmpty ? 130 : min(400, CGFloat(store.items.count) * 53 + CGFloat(headerCount) * 27 + 10)
+        return store.items.isEmpty ? 130 : min(400, CGFloat(store.items.count) * 53 + CGFloat(headerCount) * 31 + 10)
     }
 
     private func sectionHeader(_ title: String, section: WorktreeSection) -> some View {
@@ -129,13 +129,14 @@ struct WorktreeMenuView: View {
                 Image(systemName: "pin.fill").font(.system(size: 10)).accessibilityHidden(true)
             }
             Text(title).lineLimit(1).truncationMode(.middle)
-            Rectangle().fill(.primary.opacity(0.18)).frame(height: 0.5).accessibilityHidden(true)
+            Rectangle().fill(.primary.opacity(0.35)).frame(height: 1).accessibilityHidden(true)
             Text("\(section.worktrees.count)").font(.system(size: 10, weight: .medium))
                 .monospacedDigit().foregroundStyle(.secondary)
                 .accessibilityLabel(section.worktrees.count == 1 ? "1 worktree" : "\(section.worktrees.count) worktrees")
         }
-        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.primary)
-        .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 4)
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(Color(nsColor: .secondaryLabelColor))
+        .padding(.horizontal, 8).padding(.top, 12).padding(.bottom, 4)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
