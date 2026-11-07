@@ -3,13 +3,13 @@ set -euo pipefail
 
 MODE="${1:-run}"
 case "$MODE" in
-  run|--build|--preview|--debug|--logs|--telemetry|--verify) ;;
-  *) echo "Usage: $0 [--build|--preview|--debug|--logs|--telemetry|--verify]" >&2; exit 2 ;;
+  run|--build|--preview|--demo|--demo-welcome|--debug|--logs|--telemetry|--verify) ;;
+  *) echo "Usage: $0 [--build|--preview|--demo|--demo-welcome|--debug|--logs|--telemetry|--verify]" >&2; exit 2 ;;
 esac
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 source "$ROOT_DIR/script/toolchain.sh"
-if [[ "$MODE" == --preview ]]; then TWIG_SWIFT_ARGS+=(-Xswiftc -DTWIG_PREVIEW); fi
+if [[ "$MODE" == --preview || "$MODE" == --demo || "$MODE" == --demo-welcome ]]; then TWIG_SWIFT_ARGS+=(-Xswiftc -DTWIG_PREVIEW); fi
 APP_BUNDLE="$ROOT_DIR/dist/Twig.app"
 if [[ "$MODE" != --build ]]; then /usr/bin/pkill -x Twig >/dev/null 2>&1 || true; fi
 /usr/bin/swift build "${TWIG_SWIFT_ARGS[@]}"
@@ -20,6 +20,11 @@ twig_stage_bundle "$BUILD_DIR/Twig" "$APP_BUNDLE"
 case "$MODE" in
   --build) echo "Built $APP_BUNDLE" ;;
   run|--preview) /usr/bin/open -n "$APP_BUNDLE" ;;
+  --demo|--demo-welcome)
+    DEMO_ROOT="$(/usr/bin/python3 "$ROOT_DIR/script/make_demo.py" "$ROOT_DIR/dist/demos" "$MODE")"
+    /usr/bin/open -n "$APP_BUNDLE" --args --twig-demo-root "$DEMO_ROOT"
+    echo "Demo repositories and preferences: $DEMO_ROOT"
+    ;;
   --debug) /usr/bin/open -n "$APP_BUNDLE"; /usr/bin/lldb -n Twig ;;
   --logs) /usr/bin/open -n "$APP_BUNDLE"; /usr/bin/log stream --info --style compact --predicate 'process == "Twig"' ;;
   --telemetry) /usr/bin/open -n "$APP_BUNDLE"; /usr/bin/log stream --info --style compact --predicate 'subsystem == "com.luku.Twig"' ;;

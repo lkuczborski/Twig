@@ -33,7 +33,11 @@ final class TwigStore {
 
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        persistence = FilePreferencesStore(storageURL: support.appendingPathComponent("Twig/preferences.json"))
+        var preferencesURL = support.appendingPathComponent("Twig/preferences.json")
+#if TWIG_PREVIEW
+        preferencesURL = PreviewEnvironment.preferencesURL ?? preferencesURL
+#endif
+        persistence = FilePreferencesStore(storageURL: preferencesURL)
         do { preferences = try persistence.load() }
         catch {
             preferencesNeedRecovery = true

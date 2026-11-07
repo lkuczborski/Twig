@@ -16,6 +16,7 @@ struct WelcomeView: View {
                     Text("Welcome to Twig").font(.system(size: 25, weight: .semibold))
                     Text("Your worktrees. The right editor.\nOne click away.")
                         .font(.system(size: 15)).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }.padding(.top, 7)
             }
 
@@ -32,19 +33,26 @@ struct WelcomeView: View {
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                     Button("Choose a folder…", action: showSettings)
                 } else {
-                    ForEach(Array(store.sortedItems.prefix(3))) { item in
-                        HStack(spacing: 10) {
-                            Image(systemName: "arrow.triangle.branch").foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(item.worktree.repositoryName).font(.system(size: 13, weight: .medium))
-                                Text(item.worktree.branch ?? "Detached worktree")
-                                    .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
-                                    .lineLimit(1).truncationMode(.middle)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 14) {
+                            ForEach(store.sortedItems) { item in
+                                HStack(spacing: 10) {
+                                    Image(systemName: "arrow.triangle.branch").foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(item.worktree.repositoryName).font(.system(size: 13, weight: .medium))
+                                        Text(item.worktree.branch ?? "Detached worktree")
+                                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                                            .lineLimit(1).truncationMode(.middle)
+                                    }
+                                    Spacer()
+                                    Text(store.editorName(for: item)).font(.caption).foregroundStyle(.secondary)
+                                }.frame(minHeight: 34)
                             }
-                            Spacer()
-                            Text(store.editorName(for: item)).font(.caption).foregroundStyle(.secondary)
                         }
                     }
+                    .scrollIndicators(.visible)
+                    .frame(height: min(154, CGFloat(store.items.count) * 48 - 14))
+                    .accessibilityLabel("Detected worktrees")
                 }
             }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)
@@ -63,6 +71,9 @@ struct WelcomeView: View {
             if let error = store.errorMessage {
                 Text(error).font(.caption).foregroundStyle(.orange).lineLimit(3)
             }
+            if store.preferencesNeedRecovery {
+                Button("Recover Preferences in Settings…", action: showSettings)
+            }
             Divider()
             HStack {
                 Label("Local. Private. Yours.", systemImage: "lock")
@@ -74,6 +85,9 @@ struct WelcomeView: View {
         }
         .padding(30).frame(width: 520)
         .background(.regularMaterial)
+        .background(WindowVisibilityObserver { visible in
+            store.contentVisibilityChanged("welcome", isVisible: visible)
+        }.frame(width: 0, height: 0))
         .task { await store.refresh() }
     }
 
