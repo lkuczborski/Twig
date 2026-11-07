@@ -2,6 +2,8 @@
 
 Twig can be opened from any application with **Control–Option–Space**. Settings → Keyboard records a different combination, disables it, or restores the default. Registration uses Carbon hotkeys, without requesting Accessibility access or monitoring typing in other apps. A conflicting registration reports an error and retains the saved choice.
 
+Closing or hiding Settings, or switching to another application, cancels an unfinished recording and immediately restores the saved shortcut. This observes the actual AppKit window because Settings content is retained after close.
+
 Within Twig, **↑ / ↓** select a worktree and keep it visible, **Return** opens it, and **Escape** dismisses the panel. The selected row is highlighted and its destination editor appears in the footer. Navigation does not interfere with native action menus or input-method text composition.
 
 Search accepts partial, case-insensitive, accent-insensitive words and subsequences. For example, `atl keynav` can match the Atlas repository's `feature/keyboard-navigation` branch. Exact and contiguous matches rank ahead of fuzzy matches; activity order breaks ties. Every space-separated query token must match one of the repository, branch, path, or editor fields.

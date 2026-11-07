@@ -28,15 +28,23 @@ struct ShortcutRecorderView: View {
             }
         }
         .background(ShortcutCapture(recording: $recording, onShortcut: store.setGlobalShortcut).frame(width: 0, height: 0))
+        .background(WindowVisibilityObserver { visible in
+            if !visible { cancelRecording() }
+        }.frame(width: 0, height: 0))
         .onChange(of: recording) { _, active in
             // Suspend the current registration while recording, so it can be recorded again.
             if active { _ = store.onGlobalShortcutChange?(nil) }
             else { _ = store.onGlobalShortcutChange?(store.preferences.globalShortcut) }
         }
-        .onDisappear {
-            recording = false
-            _ = store.onGlobalShortcutChange?(store.preferences.globalShortcut)
-        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in cancelRecording() }
+        .onDisappear { cancelRecording() }
+    }
+
+    private func cancelRecording() {
+        guard recording else { return }
+        recording = false
+        // AppKit retains Settings content after close; restore immediately rather than relying on onDisappear.
+        _ = store.onGlobalShortcutChange?(store.preferences.globalShortcut)
     }
 }
 
