@@ -129,7 +129,7 @@ struct WorktreeMenuView: View {
                 Image(systemName: "pin.fill").font(.system(size: 10)).accessibilityHidden(true)
             }
             Text(title).lineLimit(1).truncationMode(.middle)
-            Rectangle().fill(Color(nsColor: .labelColor).opacity(0.35)).frame(height: 1).accessibilityHidden(true)
+            Spacer(minLength: 0)
             Text("\(section.worktrees.count)").font(.system(size: 10, weight: .medium))
                 .monospacedDigit().foregroundStyle(.secondary)
                 .accessibilityLabel(section.worktrees.count == 1 ? "1 worktree" : "\(section.worktrees.count) worktrees")
