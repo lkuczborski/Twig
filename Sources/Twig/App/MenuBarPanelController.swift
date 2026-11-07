@@ -48,9 +48,6 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "arrow.triangle.branch", accessibilityDescription: "Twig")
             button.image?.isTemplate = true
-            // Selection is presentation state, not the transient mouse-down highlight.
-            button.setButtonType(.pushOnPushOff)
-            (button.cell as? NSButtonCell)?.showsStateBy = .changeBackgroundCellMask
             button.toolTip = "Twig"
             button.target = self
             button.action = #selector(togglePanel)
@@ -165,7 +162,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         menuObservers.removeAll()
         selectionObservers.forEach(NotificationCenter.default.removeObserver)
         selectionObservers.removeAll()
-        statusItem.button?.state = .off
+        statusItem.button?.highlight(false)
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 
@@ -178,6 +175,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             installEventMonitors()
         }
         updateStatusSelection()
+        // NSStatusBarButton clears its tracking highlight after the mouse-up
+        // action returns. Reapply the current presentation state after that reset.
+        DispatchQueue.main.async { [weak self] in self?.updateStatusSelection() }
 #if TWIG_PREVIEW
         PreviewEnvironment.record("panel toggled: visible=\(panel.isVisible), key=\(panel.isKeyWindow)")
 #endif
@@ -197,8 +197,20 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private func positionPanel() {
         guard let button = statusButtonRect, let screen = statusItem.button?.window?.screen else { return }
         let bounds = screen.visibleFrame
-        let x = min(max(button.midX - panel.frame.width / 2, bounds.minX + 6), bounds.maxX - panel.frame.width - 6)
+        let minX = bounds.minX + 6
+        let maxX = max(minX, bounds.maxX - panel.frame.width - 6)
+        let leadingX = button.minX
+        let trailingX = button.maxX - panel.frame.width
+        // Match native menus: open from the icon's left edge when there is room,
+        // otherwise align the right edges before falling back to screen bounds.
+        let x: CGFloat
+        if (minX...maxX).contains(leadingX) { x = leadingX }
+        else if (minX...maxX).contains(trailingX) { x = trailingX }
+        else { x = min(max(leadingX, minX), maxX) }
         panel.setFrameOrigin(NSPoint(x: x, y: button.minY - panel.frame.height - 2))
+#if TWIG_PREVIEW
+        PreviewEnvironment.record("panel placement: button=\(button), screen=\(bounds), panel=\(panel.frame)")
+#endif
     }
 
     private func installEventMonitors() {
@@ -269,7 +281,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         let visibleWindows = windows.filter { $0.isVisible && !$0.isMiniaturized }
         // Native action menus may temporarily take key status from the visible panel.
         let selected = panel.isVisible || (NSApp.isActive && !visibleWindows.isEmpty)
-        statusItem.button?.state = selected ? .on : .off
+        // NSStatusBarButton draws its native selection from highlight, not the
+        // generic NSButton state/showsStateBy combination.
+        statusItem.button?.highlight(selected)
 #if TWIG_PREVIEW
         if lastRecordedSelection != selected {
             lastRecordedSelection = selected
