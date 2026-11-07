@@ -13,11 +13,13 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private let panel: MenuPanel
     private var globalMouseMonitor: Any?
     private var localEventMonitor: Any?
+    private var statusTrackingMonitor: Any?
     private var menuObservers: [NSObjectProtocol] = []
     private var selectionObservers: [NSObjectProtocol] = []
     private var trackingMenus = 0
     private var globalShortcut: GlobalShortcutService?
     private var isShuttingDown = false
+    private var selectionUpdateScheduled = false
 #if TWIG_PREVIEW
     private var lastRecordedSelection: Bool?
 #endif
@@ -56,6 +58,15 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         statusItem.autosaveName = "TwigPanel"
         statusItem.isVisible = true
         statusItem.button?.setAccessibilityLabel("Twig")
+        // Even a cancelled mouse gesture resets AppKit's tracking highlight.
+        statusTrackingMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp]) { [weak self] event in
+            MainActor.assumeIsolated {
+                if let self, event.window === self.statusItem.button?.window {
+                    self.scheduleStatusSelectionUpdate()
+                }
+            }
+            return event
+        }
         observeMenus()
         observeWindowSelection(panel)
         observeSelectionChanges([NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification], object: NSApp)
@@ -162,6 +173,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         menuObservers.removeAll()
         selectionObservers.forEach(NotificationCenter.default.removeObserver)
         selectionObservers.removeAll()
+        if let monitor = statusTrackingMonitor { NSEvent.removeMonitor(monitor); statusTrackingMonitor = nil }
         statusItem.button?.highlight(false)
         NSStatusBar.system.removeStatusItem(statusItem)
     }
@@ -177,7 +189,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         updateStatusSelection()
         // NSStatusBarButton clears its tracking highlight after the mouse-up
         // action returns. Reapply the current presentation state after that reset.
-        DispatchQueue.main.async { [weak self] in self?.updateStatusSelection() }
+        scheduleStatusSelectionUpdate()
 #if TWIG_PREVIEW
         PreviewEnvironment.record("panel toggled: visible=\(panel.isVisible), key=\(panel.isKeyWindow)")
 #endif
@@ -250,7 +262,10 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private func observeMenus() {
         for (name, change) in [(NSMenu.didBeginTrackingNotification, 1), (NSMenu.didEndTrackingNotification, -1)] {
             menuObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.trackingMenus = max(0, (self?.trackingMenus ?? 0) + change) }
+                MainActor.assumeIsolated {
+                    self?.trackingMenus = max(0, (self?.trackingMenus ?? 0) + change)
+                    if change < 0 { self?.scheduleStatusSelectionUpdate() }
+                }
             })
         }
     }
@@ -281,15 +296,31 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         let visibleWindows = windows.filter { $0.isVisible && !$0.isMiniaturized }
         // Native action menus may temporarily take key status from the visible panel.
         let selected = panel.isVisible || (NSApp.isActive && !visibleWindows.isEmpty)
+#if TWIG_PREVIEW
+        let wasHighlighted = statusItem.button?.isHighlighted == true
+#endif
         // NSStatusBarButton draws its native selection from highlight, not the
         // generic NSButton state/showsStateBy combination.
         statusItem.button?.highlight(selected)
 #if TWIG_PREVIEW
-        if lastRecordedSelection != selected {
+        if lastRecordedSelection != selected || wasHighlighted != selected {
             lastRecordedSelection = selected
-            PreviewEnvironment.record("status selection: selected=\(selected), panel=\(panel.isVisible), active=\(NSApp.isActive), windows=\(visibleWindows.map(\.title))")
+            PreviewEnvironment.record("status selection: selected=\(selected), highlighted=\(statusItem.button?.isHighlighted == true), panel=\(panel.isVisible), active=\(NSApp.isActive), windows=\(visibleWindows.map(\.title))")
         }
 #endif
+    }
+
+    private func scheduleStatusSelectionUpdate() {
+        guard !isShuttingDown, !selectionUpdateScheduled else { return }
+        selectionUpdateScheduled = true
+        // Default mode waits until AppKit exits its mouse/menu tracking loop.
+        RunLoop.main.perform(inModes: [.default]) { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.selectionUpdateScheduled = false
+                self.updateStatusSelection()
+            }
+        }
     }
 
     func windowDidResignKey(_ notification: Notification) {
