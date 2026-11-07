@@ -7,6 +7,9 @@ public struct RepositoryRootStatus: Identifiable, Sendable, Equatable {
     public let isAvailable: Bool
     public let worktreeCount: Int
     public let message: String?
+    /// Valid registered checkout paths that are temporarily missing. Watch their
+    /// nearest existing ancestors so restoring a drive/folder triggers discovery.
+    public let unavailableWorktreeFolders: [URL]
 }
 
 public struct RepositoryDiscoveryResult: Sendable {
@@ -24,14 +27,18 @@ public struct RepositoryDiscoverer: Sendable {
         let inspector = WorktreeDiscoverer()
         var found: [String: Worktree] = [:]
         var warnings: [String] = []
+        var unavailableWorktreeFolders: [URL] = []
         do {
             guard isDirectory(root) else { throw RepositoryError.invalid("Folder unavailable. Reconnect its drive or choose another repository.") }
             let common: URL
+            let selected: Worktree?
+            let selectedMetadataDirectory: Bool
             if FileManager.default.fileExists(atPath: root.appendingPathComponent(".git").path) {
-                let selected = try inspector.inspect(root)
-                guard let directory = selected.commonGitDirectory else { throw RepositoryError.invalid("Git metadata is unavailable.") }
+                let checkout = try inspector.inspect(root)
+                guard let directory = checkout.commonGitDirectory else { throw RepositoryError.invalid("Git metadata is unavailable.") }
                 common = directory.standardizedFileURL.resolvingSymlinksInPath()
-                found[selected.id] = selected
+                selected = checkout
+                selectedMetadataDirectory = false
             } else if isDirectory(root.appendingPathComponent("objects")), isDirectory(root.appendingPathComponent("refs")) {
                 // A bare repository has no main checkout, but can own linked worktrees.
                 let head = try readPointer(root.appendingPathComponent("HEAD"))
@@ -39,15 +46,24 @@ public struct RepositoryDiscoverer: Sendable {
                     throw RepositoryError.invalid("The repository HEAD is invalid.")
                 }
                 common = root
+                selected = nil
+                selectedMetadataDirectory = true
             } else {
                 throw RepositoryError.invalid("Choose a Git checkout or a bare repository.")
+            }
+
+            // A directory named `.git` can itself be a bare repository. Consult
+            // Git's explicit setting before inventing a checkout at its parent.
+            let isBare = try bareSetting(in: common) ?? selectedMetadataDirectory
+            if let selected, !isBare || selected.gitDirectory?.standardizedFileURL.resolvingSymlinksInPath() != common {
+                found[selected.id] = selected
             }
 
             let repositoryName = common.lastPathComponent == ".git"
                 ? common.deletingLastPathComponent().lastPathComponent
                 : (common.lastPathComponent.hasSuffix(".git") ? String(common.lastPathComponent.dropLast(4)) : root.lastPathComponent)
 
-            if common.lastPathComponent == ".git" {
+            if common.lastPathComponent == ".git", !isBare {
                 let mainFolder = common.deletingLastPathComponent()
                 do {
                     let main = try inspector.inspect(mainFolder)
@@ -70,8 +86,15 @@ public struct RepositoryDiscoverer: Sendable {
                         let pointer = try readPointer(admin.appendingPathComponent("gitdir"))
                         let dotGit = resolve(pointer, relativeTo: admin).resolvingSymlinksInPath()
                         guard dotGit.lastPathComponent == ".git" else { throw RepositoryError.invalid("The checkout pointer is invalid.") }
+                        let commonPointer = try readPointer(admin.appendingPathComponent("commondir"))
+                        guard resolve(commonPointer, relativeTo: admin).resolvingSymlinksInPath() == common else {
+                            throw RepositoryError.invalid("The registration belongs to a different repository.")
+                        }
                         let folder = dotGit.deletingLastPathComponent()
-                        guard isDirectory(folder) else { throw RepositoryError.invalid("The checkout folder is unavailable.") }
+                        guard isDirectory(folder), FileManager.default.fileExists(atPath: dotGit.path) else {
+                            unavailableWorktreeFolders.append(folder)
+                            throw RepositoryError.invalid("The checkout folder is unavailable.")
+                        }
                         let worktree = try inspector.inspect(folder)
                         guard worktree.gitDirectory?.standardizedFileURL.resolvingSymlinksInPath() == admin.standardizedFileURL.resolvingSymlinksInPath(),
                               worktree.commonGitDirectory?.standardizedFileURL.resolvingSymlinksInPath() == common else {
@@ -90,12 +113,13 @@ public struct RepositoryDiscoverer: Sendable {
             }.sorted { $0.lastActivity == $1.lastActivity ? $0.id < $1.id : $0.lastActivity > $1.lastActivity }
             return RepositoryDiscoveryResult(worktrees: worktrees, warnings: warnings,
                 status: RepositoryRootStatus(root: root, commonGitDirectory: common, isAvailable: true,
-                                             worktreeCount: worktrees.count, message: nil))
+                                             worktreeCount: worktrees.count, message: nil,
+                                             unavailableWorktreeFolders: unavailableWorktreeFolders))
         } catch {
             let message = error.localizedDescription
             return RepositoryDiscoveryResult(worktrees: [], warnings: ["‘\(root.lastPathComponent)’: \(message)"],
                 status: RepositoryRootStatus(root: root, commonGitDirectory: nil, isAvailable: false,
-                                             worktreeCount: 0, message: message))
+                                             worktreeCount: 0, message: message, unavailableWorktreeFolders: []))
         }
     }
 
@@ -105,21 +129,50 @@ public struct RepositoryDiscoverer: Sendable {
     }
 
     private func readPointer(_ url: URL) throws -> String {
-        let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
-        guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? 16_385) <= 16_384 else {
-            throw RepositoryError.invalid("Git metadata is not a small regular file.")
-        }
-        let handle = try FileHandle(forReadingFrom: url)
-        defer { try? handle.close() }
-        let data = try handle.read(upToCount: 16_385) ?? Data()
-        guard data.count <= 16_384, let text = String(data: data, encoding: .utf8) else {
-            throw RepositoryError.invalid("Git metadata is too large or not UTF-8.")
-        }
-        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = try readMetadata(url).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty, !value.contains("\n"), !value.contains("\r"), !value.contains("\0") else {
             throw RepositoryError.invalid("The Git metadata pointer is invalid.")
         }
         return value
+    }
+
+    private func readMetadata(_ url: URL, maximumBytes: Int = 16_384) throws -> String {
+        let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? maximumBytes + 1) <= maximumBytes else {
+            throw RepositoryError.invalid("Git metadata is not a small regular file.")
+        }
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        let data = try handle.read(upToCount: maximumBytes + 1) ?? Data()
+        guard data.count <= maximumBytes, let text = String(data: data, encoding: .utf8) else {
+            throw RepositoryError.invalid("Git metadata is too large or not UTF-8.")
+        }
+        return text
+    }
+
+    /// Reads only the local core.bare value; config includes and commands are not evaluated.
+    private func bareSetting(in common: URL) throws -> Bool? {
+        let config = common.appendingPathComponent("config")
+        guard FileManager.default.fileExists(atPath: config.path) else { return nil }
+        let text = try readMetadata(config, maximumBytes: 65_536)
+        var inCore = false
+        var result: Bool?
+        for rawLine in text.split(whereSeparator: \.isNewline) {
+            let line = rawLine.split(maxSplits: 1, omittingEmptySubsequences: false, whereSeparator: { $0 == "#" || $0 == ";" }).first.map(String.init)?
+                .trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+            guard !line.isEmpty else { continue }
+            if line.hasPrefix("[") { inCore = line == "[core]"; continue }
+            guard inCore else { continue }
+            let pair = line.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            guard pair.first?.trimmingCharacters(in: .whitespaces) == "bare" else { continue }
+            if pair.count == 1 { result = true; continue }
+            switch pair[1].trimmingCharacters(in: CharacterSet(charactersIn: " \t\"")) {
+            case "true", "yes", "on", "1": result = true
+            case "false", "no", "off", "0", "": result = false
+            default: throw RepositoryError.invalid("The core.bare setting is invalid.")
+            }
+        }
+        return result
     }
 
     private func resolve(_ path: String, relativeTo folder: URL) -> URL {

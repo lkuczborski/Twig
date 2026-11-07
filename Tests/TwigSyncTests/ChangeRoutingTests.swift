@@ -161,4 +161,24 @@ struct ChangeRoutingTests {
         #expect(routing.watchRoots.contains(linked.standardizedFileURL.resolvingSymlinksInPath()))
         #expect(routing.watchRoots.contains(selected.standardizedFileURL.resolvingSymlinksInPath()))
     }
+
+    @Test func unavailableRegisteredCheckoutIsWatchedUntilItsFolderReturns() throws {
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("TwigMissingCheckout-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let original = temporary.appendingPathComponent("repository")
+        let externalParent = temporary.appendingPathComponent("external-drive")
+        let missing = externalParent.appendingPathComponent("review")
+        let codex = temporary.appendingPathComponent("codex/worktrees")
+        for folder in [original, externalParent, codex] {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        }
+        // Store includes unavailable registration paths in repositoryRoots in
+        // addition to explicitly configured roots, even with no active row.
+        let routing = ChangeRouting(worktreesRoot: codex, worktrees: [], applicationDirectories: [], repositoryRoots: [original, missing])
+        #expect(routing.watchRoots.contains(externalParent.standardizedFileURL.resolvingSymlinksInPath()))
+        try FileManager.default.createDirectory(at: missing, withIntermediateDirectories: true)
+        let request = routing.classify([FilesystemEvent(path: missing.path)])
+        #expect(request.worktrees && request.reconfigureWatcher)
+        #expect(!request.applications)
+    }
 }

@@ -63,6 +63,65 @@ struct RepositoryDiscoveryTests {
         #expect(result.warnings.count == 2)
     }
 
+    @Test func bareRepositoryNamedDotGitNeverInventsItsParentAsACheckout() throws {
+        let fixture = try RepositoryFixture()
+        defer { fixture.remove() }
+        try fixture.write("[core]\n\tbare = true # no main checkout\n# bare = false\n; bare = false\n", to: fixture.common.appendingPathComponent("config"))
+        for entry in [fixture.common, fixture.main] {
+            let empty = RepositoryDiscoverer().discover(at: entry)
+            #expect(empty.status.isAvailable)
+            #expect(empty.worktrees.isEmpty)
+        }
+        let linked = try fixture.linked("bare-linked", branch: "review")
+        for entry in [fixture.common, fixture.main, linked] {
+            let result = RepositoryDiscoverer().discover(at: entry)
+            #expect(result.status.isAvailable)
+            #expect(result.warnings.isEmpty)
+            #expect(result.worktrees.map { $0.folder.path } == [linked.path])
+        }
+    }
+
+    @Test func nonBareGitDirectoryCanStillFindItsMainCheckout() throws {
+        let fixture = try RepositoryFixture()
+        defer { fixture.remove() }
+        try fixture.write("[core]\n\tbare = false\n", to: fixture.common.appendingPathComponent("config"))
+        let result = RepositoryDiscoverer().discover(at: fixture.common)
+        #expect(result.status.isAvailable)
+        #expect(result.worktrees.map { $0.folder.path } == [fixture.main.path])
+    }
+
+    @Test func missingRegisteredCheckoutCanReturnWithoutChangingGitRegistry() throws {
+        let fixture = try RepositoryFixture()
+        defer { fixture.remove() }
+        let linked = try fixture.linked("temporarily-away", branch: "review")
+        let dotGit = linked.appendingPathComponent(".git")
+        let savedPointer = try Data(contentsOf: dotGit)
+        try FileManager.default.removeItem(at: linked)
+
+        let unavailable = RepositoryDiscoverer().discover(at: fixture.main)
+        #expect(unavailable.worktrees.count == 1)
+        #expect(unavailable.status.unavailableWorktreeFolders.map(\.path) == [linked.path])
+
+        // Restore only the checkout; the common worktree registry remains untouched.
+        try FileManager.default.createDirectory(at: linked, withIntermediateDirectories: true)
+        try savedPointer.write(to: dotGit)
+        let restored = RepositoryDiscoverer().discover(at: fixture.main)
+        #expect(restored.worktrees.count == 2)
+        #expect(restored.status.unavailableWorktreeFolders.isEmpty)
+    }
+
+    @Test func foreignRegistrationsDoNotCreateUnavailableWatchPaths() throws {
+        let fixture = try RepositoryFixture()
+        defer { fixture.remove() }
+        let admin = fixture.common.appendingPathComponent("worktrees/foreign")
+        try fixture.write("/missing/foreign/.git", to: admin.appendingPathComponent("gitdir"))
+        try fixture.write("/different/repository/.git", to: admin.appendingPathComponent("commondir"))
+        let result = RepositoryDiscoverer().discover(at: fixture.main)
+        #expect(result.status.unavailableWorktreeFolders.isEmpty)
+        #expect(result.worktrees.count == 1)
+        #expect(result.warnings.count == 1)
+    }
+
     @Test func unavailableRootReportsActionableStatusAndCanReturn() throws {
         let fixture = try RepositoryFixture()
         defer { fixture.remove() }

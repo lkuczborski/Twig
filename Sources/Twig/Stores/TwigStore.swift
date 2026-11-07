@@ -255,7 +255,7 @@ final class TwigStore {
                                 commonGitDirectory: $0.worktree.commonGitDirectory)
             },
             applicationDirectories: InstalledApplicationScanner.standardDirectories,
-            repositoryRoots: repositoryRoots,
+            repositoryRoots: repositoryRoots + repositoryStatuses.flatMap(\.unavailableWorktreeFolders),
             repositoryGitDirectories: repositoryStatuses.compactMap(\.commonGitDirectory)
         )
         routing = configuration
