@@ -8,6 +8,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private let store: TwigStore
     private var settingsWindow: NSWindow?
     private var detailsWindow: NSWindow?
+    private var welcomeWindow: NSWindow?
     private let statusItem: NSStatusItem
     private let panel: MenuPanel
     private var globalMouseMonitor: Any?
@@ -54,16 +55,42 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     @objc func showSettings() {
         dismiss()
         if settingsWindow == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 440),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 560),
                                   styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             window.title = "Twig Settings"
-            window.contentView = NSHostingView(rootView: TwigSettingsView(store: store))
+            window.contentView = NSHostingView(rootView: TwigSettingsView(store: store, showWelcome: { [weak self] in
+                self?.showWelcome()
+            }))
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window
         }
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+
+    @objc func showWelcome() {
+        dismiss()
+        if welcomeWindow == nil {
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 520, height: 570),
+                                  styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            window.title = "Welcome to Twig"
+            window.contentView = NSHostingView(rootView: WelcomeView(store: store,
+                showSettings: { [weak self] in self?.showSettings() },
+                finish: { [weak self] in
+                    guard let self else { return }
+                    // A persistence error is shown in the welcome view so a failed
+                    // save never silently claims onboarding has completed.
+                    guard self.store.completeWelcome() else { return }
+                    self.welcomeWindow?.orderOut(nil)
+                    if !self.panel.isVisible { self.togglePanel() }
+                }))
+            window.isReleasedWhenClosed = false
+            window.center()
+            welcomeWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        welcomeWindow?.makeKeyAndOrderFront(nil)
     }
 
     private func showDetails() {

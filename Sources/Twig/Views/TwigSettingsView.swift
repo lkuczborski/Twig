@@ -4,11 +4,16 @@ import TwigCore
 
 struct TwigSettingsView: View {
     @Bindable var store: TwigStore
+    var showWelcome: () -> Void = {}
     @State private var codexPath = ""
     @State private var confirmRecovery = false
 
     var body: some View {
         Form {
+            Section("General") {
+                LoginItemSettingsView()
+                Button("Welcome to Twig…", action: showWelcome)
+            }
             Section("Worktree discovery") {
                 TextField("Codex home", text: $codexPath, prompt: Text("Automatic (~/.codex)"))
                 HStack {
@@ -46,7 +51,7 @@ struct TwigSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 500, height: 440)
+        .frame(width: 500, height: 560)
         .onAppear { codexPath = store.preferences.codexHome ?? "" }
         .task { await store.refreshApplications() }
         .confirmationDialog("Reset unreadable preferences?", isPresented: $confirmRecovery) {

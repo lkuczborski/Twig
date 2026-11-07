@@ -30,6 +30,7 @@ final class TwigAppDelegate: NSObject, NSApplicationDelegate {
 #if TWIG_PREVIEW
         controller.showPreview()
 #endif
+        if !store.preferences.hasCompletedWelcome { controller.showWelcome() }
     }
 
     private func installMainMenu(controller: MenuBarPanelController) {
@@ -39,6 +40,9 @@ final class TwigAppDelegate: NSObject, NSApplicationDelegate {
         let settings = NSMenuItem(title: "Settings…", action: #selector(MenuBarPanelController.showSettings), keyEquivalent: ",")
         settings.target = controller
         appMenu.addItem(settings)
+        let welcome = NSMenuItem(title: "Welcome to Twig…", action: #selector(MenuBarPanelController.showWelcome), keyEquivalent: "")
+        welcome.target = controller
+        appMenu.addItem(welcome)
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Twig", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu

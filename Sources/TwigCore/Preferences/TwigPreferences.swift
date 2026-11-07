@@ -13,13 +13,16 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     public var fallbackIDE: IDEID?
     public var overrides: [String: WorktreeOverride]
     public var lastOpened: [String: Date]
+    public var hasCompletedWelcome: Bool
 
     public init(codexHome: String? = nil, fallbackIDE: IDEID? = nil,
-                overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:]) {
+                overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
+                hasCompletedWelcome: Bool = false) {
         self.codexHome = codexHome
         self.fallbackIDE = fallbackIDE
         self.overrides = overrides
         self.lastOpened = lastOpened
+        self.hasCompletedWelcome = hasCompletedWelcome
     }
 
     public func overrideForWorktree(_ folder: URL) -> WorktreeOverride? {
@@ -39,7 +42,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened
+        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, hasCompletedWelcome
     }
 
     public init(from decoder: Decoder) throws {
@@ -52,6 +55,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         fallbackIDE = try container.decodeIfPresent(IDEID.self, forKey: .fallbackIDE)
         overrides = try container.decodeIfPresent([String: WorktreeOverride].self, forKey: .overrides) ?? [:]
         lastOpened = try container.decodeIfPresent([String: Date].self, forKey: .lastOpened) ?? [:]
+        hasCompletedWelcome = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedWelcome) ?? false
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -61,5 +65,6 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         try container.encodeIfPresent(fallbackIDE, forKey: .fallbackIDE)
         try container.encode(overrides, forKey: .overrides)
         try container.encode(lastOpened, forKey: .lastOpened)
+        try container.encode(hasCompletedWelcome, forKey: .hasCompletedWelcome)
     }
 }

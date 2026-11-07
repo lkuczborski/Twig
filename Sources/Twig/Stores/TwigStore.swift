@@ -244,6 +244,13 @@ final class TwigStore {
         save(updated)
     }
 
+    @discardableResult
+    func completeWelcome() -> Bool {
+        var updated = preferences
+        updated.hasCompletedWelcome = true
+        return save(updated)
+    }
+
     func setCodexHome(_ path: String) {
         let cleaned = path.trimmingCharacters(in: .whitespacesAndNewlines)
         if !cleaned.isEmpty {

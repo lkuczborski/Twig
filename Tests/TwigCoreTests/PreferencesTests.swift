@@ -11,6 +11,7 @@ final class PreferencesTests {
             var preferences = try store.load()
             preferences.codexHome = "/tmp/custom-codex"
             preferences.fallbackIDE = .zed
+            preferences.hasCompletedWelcome = true
             preferences.setOverride(WorktreeOverride(ide: .vscode, targetPath: "app.code-workspace"), for: folder)
             preferences.recordOpened(folder, at: Date(timeIntervalSince1970: 1_700_000_000.123))
             try store.save(preferences)
