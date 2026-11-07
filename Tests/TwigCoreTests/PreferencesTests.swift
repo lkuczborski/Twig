@@ -98,6 +98,30 @@ final class PreferencesTests {
         }
     }
 
+    @Test
+    func testPinsLabelsAndGroupingRoundTrip() throws {
+        try withStore { store, root in
+            let folder = root.appendingPathComponent("worktree")
+            let alternate = folder.appendingPathComponent("../worktree")
+            var preferences = TwigPreferences()
+            preferences.setPinned(true, for: alternate)
+            preferences.setLabel("  Login   redesign\n", for: folder)
+            preferences.groupByRepository = false
+            try store.save(preferences)
+            let reloaded = try store.load()
+            #expect(reloaded.isPinned(folder))
+            #expect(reloaded.label(for: alternate) == "Login redesign")
+            #expect(!reloaded.groupByRepository)
+            #expect(reloaded == preferences)
+
+            preferences.setPinned(false, for: folder)
+            preferences.setLabel(" \n\t", for: alternate)
+            try store.save(preferences)
+            #expect(try store.load().pinnedWorktrees.isEmpty)
+            #expect(try store.load().worktreeLabels.isEmpty)
+        }
+    }
+
     private func withStore(_ body: (FilePreferencesStore, URL) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("TwigPreferencesTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

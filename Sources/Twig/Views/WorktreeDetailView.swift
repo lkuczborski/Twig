@@ -10,11 +10,15 @@ struct WorktreeDetailView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         VStack(alignment: .leading, spacing: 7) {
-                            Label(item.worktree.repositoryName, systemImage: "arrow.triangle.branch").font(.title2.bold())
+                            Label(store.displayTitle(for: item), systemImage: "arrow.triangle.branch").font(.title2.bold())
+                            if store.label(for: item) != nil {
+                                Text(item.worktree.repositoryName).foregroundStyle(.secondary)
+                            }
                             Text(item.worktree.branch ?? "Detached HEAD · \(item.worktree.headRevision ?? "Unknown commit")")
                                 .font(.body.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                             Text(item.worktree.folder.path).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                         }
+                        WorktreeOrganizationControls(item: item, store: store)
                         GroupBox("Click to open") {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {

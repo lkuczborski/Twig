@@ -69,13 +69,51 @@ final class TwigStore {
     var filteredItems: [ScannedWorktree] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return sortedItems.filter {
-            query.isEmpty || [$0.worktree.repositoryName, $0.worktree.branch ?? "detached",
+            query.isEmpty || [label(for: $0) ?? "", $0.worktree.repositoryName, $0.worktree.branch ?? "detached",
                               $0.worktree.folder.path, editorName(for: $0)]
                 .contains { $0.localizedCaseInsensitiveContains(query) }
         }
     }
 
     var selectedItem: ScannedWorktree? { items.first { $0.id == selectedID } }
+
+    var worktreeSections: [WorktreeSection] {
+        // Search results stay flat so ranking and keyboard navigation can agree.
+        let searching = !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return WorktreeOrganization.sections(
+            filteredItems.map(\.worktree),
+            pinnedIDs: searching ? [] : preferences.pinnedWorktrees,
+            groupByRepository: !searching && preferences.groupByRepository
+        )
+    }
+
+    var visibleItems: [ScannedWorktree] {
+        let byID = Dictionary(uniqueKeysWithValues: filteredItems.map { ($0.id, $0) })
+        return worktreeSections.flatMap(\.worktrees).compactMap { byID[$0.id] }
+    }
+
+    func label(for item: ScannedWorktree) -> String? { preferences.label(for: item.worktree.folder) }
+    func displayTitle(for item: ScannedWorktree) -> String { label(for: item) ?? item.worktree.repositoryName }
+    func isPinned(_ item: ScannedWorktree) -> Bool { preferences.isPinned(item.worktree.folder) }
+
+    func togglePin(_ item: ScannedWorktree) {
+        var updated = preferences
+        updated.setPinned(!isPinned(item), for: item.worktree.folder)
+        save(updated)
+    }
+
+    @discardableResult
+    func setLabel(_ label: String, for item: ScannedWorktree) -> Bool {
+        var updated = preferences
+        updated.setLabel(label, for: item.worktree.folder)
+        return save(updated)
+    }
+
+    func setGroupByRepository(_ grouped: Bool) {
+        var updated = preferences
+        updated.groupByRepository = grouped
+        save(updated)
+    }
 
     func activityDate(for item: ScannedWorktree) -> Date {
         max(item.worktree.lastActivity, preferences.lastOpened[WorktreePath.key(for: item.worktree.folder)] ?? .distantPast)

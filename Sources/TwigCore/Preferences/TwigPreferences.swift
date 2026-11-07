@@ -15,16 +15,24 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     public var lastOpened: [String: Date]
     public var hasCompletedWelcome: Bool
     public var repositoryEditors: [String: IDEID]
+    public var pinnedWorktrees: Set<String>
+    public var worktreeLabels: [String: String]
+    public var groupByRepository: Bool
 
     public init(codexHome: String? = nil, fallbackIDE: IDEID? = nil,
                 overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
-                repositoryEditors: [String: IDEID] = [:], hasCompletedWelcome: Bool = false) {
+                pinnedWorktrees: Set<String> = [], worktreeLabels: [String: String] = [:],
+                groupByRepository: Bool = true, repositoryEditors: [String: IDEID] = [:],
+                hasCompletedWelcome: Bool = false) {
         self.codexHome = codexHome
         self.fallbackIDE = fallbackIDE
         self.overrides = overrides
         self.lastOpened = lastOpened
         self.hasCompletedWelcome = hasCompletedWelcome
         self.repositoryEditors = repositoryEditors
+        self.pinnedWorktrees = pinnedWorktrees
+        self.worktreeLabels = worktreeLabels
+        self.groupByRepository = groupByRepository
     }
 
     public func overrideForWorktree(_ folder: URL) -> WorktreeOverride? {
@@ -51,8 +59,29 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         repositoryEditors[RepositoryIdentity.key(for: worktree)] = ide
     }
 
+    public func isPinned(_ folder: URL) -> Bool {
+        pinnedWorktrees.contains(WorktreePath.key(for: folder))
+    }
+
+    public mutating func setPinned(_ pinned: Bool, for folder: URL) {
+        let key = WorktreePath.key(for: folder)
+        if pinned { pinnedWorktrees.insert(key) }
+        else { pinnedWorktrees.remove(key) }
+    }
+
+    public func label(for folder: URL) -> String? {
+        worktreeLabels[WorktreePath.key(for: folder)]
+    }
+
+    public mutating func setLabel(_ label: String, for folder: URL) {
+        let cleaned = label.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.joined(separator: " ")
+        worktreeLabels[WorktreePath.key(for: folder)] = cleaned.isEmpty ? nil : cleaned
+    }
+
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, hasCompletedWelcome, repositoryEditors
+        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened
+        case hasCompletedWelcome, repositoryEditors
+        case pinnedWorktrees, worktreeLabels, groupByRepository
     }
 
     public init(from decoder: Decoder) throws {
@@ -67,6 +96,9 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         lastOpened = try container.decodeIfPresent([String: Date].self, forKey: .lastOpened) ?? [:]
         hasCompletedWelcome = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedWelcome) ?? false
         repositoryEditors = try container.decodeIfPresent([String: IDEID].self, forKey: .repositoryEditors) ?? [:]
+        pinnedWorktrees = try container.decodeIfPresent(Set<String>.self, forKey: .pinnedWorktrees) ?? []
+        worktreeLabels = try container.decodeIfPresent([String: String].self, forKey: .worktreeLabels) ?? [:]
+        groupByRepository = try container.decodeIfPresent(Bool.self, forKey: .groupByRepository) ?? true
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -78,5 +110,8 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         try container.encode(lastOpened, forKey: .lastOpened)
         try container.encode(hasCompletedWelcome, forKey: .hasCompletedWelcome)
         try container.encode(repositoryEditors, forKey: .repositoryEditors)
+        try container.encode(pinnedWorktrees.sorted(), forKey: .pinnedWorktrees)
+        try container.encode(worktreeLabels, forKey: .worktreeLabels)
+        try container.encode(groupByRepository, forKey: .groupByRepository)
     }
 }
