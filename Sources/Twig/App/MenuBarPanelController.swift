@@ -50,7 +50,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             button.image?.isTemplate = true
             // Selection is presentation state, not the transient mouse-down highlight.
             button.setButtonType(.pushOnPushOff)
-            (button.cell as? NSButtonCell)?.showsStateBy = .changeBackgroundCell
+            (button.cell as? NSButtonCell)?.showsStateBy = .changeBackgroundCellMask
             button.toolTip = "Twig"
             button.target = self
             button.action = #selector(togglePanel)
