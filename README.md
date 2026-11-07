@@ -34,6 +34,8 @@ Twig still opens the project itself—including Xcode workspaces and nested proj
 
 Worktree details are implemented on the development branch and are **not included in the v0.2 download**. They keep two-line rows and branch identity while adding project type, the last successful open through Twig, the destination editor's icon, and local Git change/conflict/ahead/behind indicators. Upstream counts use existing local refs; Twig does not fetch. Automated and native preview checks are recorded in the [feature notes](docs/features/WORKTREE_DETAILS.md), including remaining validation limits.
 
+The development menu also has an **Activity / Project** switch below search. Activity shows recent work across projects; Project groups all projects A–Z with recent work first inside each group. Pins stay at the top. The choice is saved, and search results continue to rank by relevance. Existing grouping preferences migrate to the corresponding view; new preferences default to Activity.
+
 ## Install
 
 1. [Download Twig v0.2](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip).

@@ -20,6 +20,8 @@ The release is packaged for Apple Silicon and Intel, Developer ID signed, and no
 
 The development implementation adds project type, successful-open age, and a destination-editor icon while preserving two-line rows and branch identity. Local Git indicators report changed files, conflicts, and ahead/behind counts against locally known upstream refs, without fetching.
 
+An Activity / Project switch in the menu header chooses globally recent work or alphabetical project groups. Pins remain first; project groups keep recent work first, and search remains ranked by relevance. The selected view persists across launches.
+
 Status reads run independently from discovery, with at most four concurrent checkouts and a default two-second / 1 MiB budget per checkout. Filesystem events invalidate results; work is cancelled when all Twig views are hidden. Unsupported or failed status reads remain unavailable rather than implying a clean worktree.
 
 The combined build, automated regressions, and native preview checks have passed with the limits recorded in the [feature notes](features/WORKTREE_DETAILS.md) and [verification record](VERIFICATION.md). These details remain **unreleased** and are not in the v0.2 download. Full VoiceOver navigation, Intel hardware, older supported macOS versions, and filtered-repository UI checks remain outside the completed verification.

@@ -36,7 +36,7 @@ To generate the fixtures without building or launching Twig:
 python3 script/make_demo.py dist/demos --demo-details
 ```
 
-The command prints the generated session directory. Pass that directory to a preview-enabled Twig build with `--twig-demo-root`. The normal `--demo` and `--demo-welcome` modes retain their five sample checkouts and existing layout.
+The command prints the generated session directory. Pass that directory to a preview-enabled Twig build with `--twig-demo-root`. The normal `--demo` and `--demo-welcome` modes retain their five sample checkouts. Their saved grouping preference opens the Project view; the header switch can change to Activity.
 
 | Sample checkout | Project | Saved last opened | Actual Git state |
 | --- | --- | --- | --- |

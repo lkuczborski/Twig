@@ -92,6 +92,8 @@ final class TwigStore {
         }.sorted { $0.1 == $1.1 ? $0.2 < $1.2 : $0.1 > $1.1 }.map { $0.0 }
     }
 
+    var isSearching: Bool { !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
     var highlightedItem: ScannedWorktree? {
         let results = visibleItems
         let id = WorktreeSelection.resolved(highlightedID, in: results.map(\.id))
@@ -124,12 +126,17 @@ final class TwigStore {
 
     var worktreeSections: [WorktreeSection] {
         // Search results stay flat so ranking and keyboard navigation can agree.
-        let searching = !search.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         return WorktreeOrganization.sections(
             filteredItems.map(\.worktree),
-            pinnedIDs: searching ? [] : preferences.pinnedWorktrees,
-            groupByRepository: !searching && preferences.groupByRepository
+            pinnedIDs: isSearching ? [] : preferences.pinnedWorktrees,
+            sortOrder: isSearching ? .activity : preferences.sortOrder
         )
+    }
+
+    var catalogSections: [WorktreeSection] {
+        WorktreeOrganization.sections(sortedItems.map(\.worktree),
+                                      pinnedIDs: preferences.pinnedWorktrees,
+                                      sortOrder: preferences.sortOrder)
     }
 
     var visibleItems: [ScannedWorktree] {
@@ -154,10 +161,11 @@ final class TwigStore {
         return save(updated)
     }
 
-    func setGroupByRepository(_ grouped: Bool) {
+    func setSortOrder(_ order: WorktreeSortOrder) {
+        guard preferences.sortOrder != order else { return }
         var updated = preferences
-        updated.groupByRepository = grouped
-        save(updated)
+        updated.sortOrder = order
+        if save(updated) { reconcileHighlight() }
     }
 
     func activityDate(for item: ScannedWorktree) -> Date {

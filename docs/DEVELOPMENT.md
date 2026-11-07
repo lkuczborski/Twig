@@ -35,6 +35,8 @@ The generator stores Foundation-compatible canonical preference keys, including 
 - Option-click a worktree to open its folder in Finder.
 - Use **Worktree editor** or **Repository editor** to save an installed editor for that scope. **Automatic** removes the override; **Open once with…** leaves saved choices intact. **Open in Terminal** opens the current worktree directory.
 - Pin worktrees, add personal labels, and group by repository. Use **Add Repository…** to include local checkout or bare-repository roots alongside Codex. Welcome and optional launch at login are available in Settings.
+
+In the development build, use the **Activity / Project** segmented control below search. Activity keeps recent worktrees together across projects; Project shows every project alphabetically and retains recent-first order inside it. Pins remain above both views. Search temporarily disables the switch and ranks results by relevance; clearing the query restores the saved view. The selected worktree remains selected and is scrolled into view when changing modes.
 - Use **Project & detection details** to see the complete branch and path, the reason for each suggestion, and choose a particular nested project.
 - Settings lets you change Codex home and choose a fallback editor. An explicit worktree override takes priority; unavailable overrides produce a helpful error.
 - The compact menu keeps two lines per worktree and preserves branch identity. Development work adds project type, successful-open age, editor icons, and local Git status within that layout. Settings and Quit are in the gear menu.

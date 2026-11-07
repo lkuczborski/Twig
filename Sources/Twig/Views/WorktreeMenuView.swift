@@ -10,6 +10,7 @@ struct WorktreeMenuView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchBar
+            sortControl
             Divider()
             content
             keyboardFooter
@@ -57,10 +58,6 @@ struct WorktreeMenuView: View {
             }
             if store.isRefreshing { ProgressView().controlSize(.mini) }
             Menu {
-                Toggle("Group by repository", isOn: Binding(
-                    get: { store.preferences.groupByRepository },
-                    set: { store.setGroupByRepository($0) }
-                ))
                 Button("Open Previous Worktree") { Task { await store.openPrevious() } }
                     .keyboardShortcut(.return, modifiers: [.command, .shift])
                     .disabled(store.previousItem == nil)
@@ -77,6 +74,28 @@ struct WorktreeMenuView: View {
             .accessibilityLabel("Twig actions")
         }
         .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 9)
+    }
+
+    private var sortControl: some View {
+        HStack(spacing: 10) {
+            Text(store.isSearching ? "By relevance" : "Sort by")
+                .font(.system(size: 11)).foregroundStyle(.secondary)
+            Spacer(minLength: 0)
+            Picker("Sort worktrees", selection: Binding(
+                get: { store.preferences.sortOrder },
+                set: { store.setSortOrder($0) }
+            )) {
+                Text("Activity").tag(WorktreeSortOrder.activity)
+                Text("Project").tag(WorktreeSortOrder.project)
+            }
+            .pickerStyle(.segmented).controlSize(.small).labelsHidden()
+            .frame(width: 210)
+            .disabled(store.isSearching)
+            .help(store.isSearching
+                  ? "Search results are ranked by relevance. Clear search to change the sort order."
+                  : "Activity shows recent work first. Project groups worktrees by project name. Pins stay at the top.")
+        }
+        .padding(.horizontal, 12).padding(.bottom, 9)
     }
 
     private var content: some View {
@@ -96,6 +115,9 @@ struct WorktreeMenuView: View {
             }
             .onChange(of: store.highlightedID) { _, id in
                 if let id { proxy.scrollTo(id) }
+            }
+            .onChange(of: store.preferences.sortOrder) { _, _ in
+                if let id = store.highlightedID { proxy.scrollTo(id) }
             }
         }
         // Search changes the contents, not the panel's size. Keeping the scroll
@@ -136,9 +158,7 @@ struct WorktreeMenuView: View {
 
     private var contentHeight: CGFloat {
         // Size from the unfiltered catalog to keep the search field anchored.
-        let sections = WorktreeOrganization.sections(store.sortedItems.map(\.worktree),
-                                                     pinnedIDs: store.preferences.pinnedWorktrees,
-                                                     groupByRepository: store.preferences.groupByRepository)
+        let sections = store.catalogSections
         let headerCount = sections.filter { $0.title != nil }.count
         return store.items.isEmpty ? 130 : min(400, CGFloat(store.items.count) * 53 + CGFloat(headerCount) * 27 + 10)
     }
