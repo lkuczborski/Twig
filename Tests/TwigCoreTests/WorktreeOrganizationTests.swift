@@ -101,7 +101,7 @@ struct WorktreeOrganizationTests {
         #expect(sections.map(\.title) == ["Pinned", "Atlas", "Twig"])
         #expect(sections[1].worktrees.map(\.id) == [sibling.id])
         #expect(sections[2].worktrees.map(\.id) == [other.id])
-        #expect(sections.dropFirst().allSatisfy(\.isRepositoryGroup))
+        #expect(sections.dropFirst().allSatisfy { $0.isRepositoryGroup })
     }
 
     @Test(arguments: WorktreeSortOrder.allCases)
