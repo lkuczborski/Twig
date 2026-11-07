@@ -18,13 +18,13 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     public var repositoryEditors: [String: IDEID]
     public var pinnedWorktrees: Set<String>
     public var worktreeLabels: [String: String]
-    public var groupByRepository: Bool
+    public var sortOrder: WorktreeSortOrder
     public var globalShortcut: GlobalShortcut?
 
     public init(codexHome: String? = nil, fallbackIDE: IDEID? = nil,
                 overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
                 pinnedWorktrees: Set<String> = [], worktreeLabels: [String: String] = [:],
-                groupByRepository: Bool = true, repositoryEditors: [String: IDEID] = [:],
+                sortOrder: WorktreeSortOrder = .activity, repositoryEditors: [String: IDEID] = [:],
                 hasCompletedWelcome: Bool = false, globalShortcut: GlobalShortcut? = .default, repositoryRoots: [String] = []) {
         self.codexHome = codexHome
         self.repositoryRoots = repositoryRoots
@@ -35,7 +35,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         self.repositoryEditors = repositoryEditors
         self.pinnedWorktrees = pinnedWorktrees
         self.worktreeLabels = worktreeLabels
-        self.groupByRepository = groupByRepository
+        self.sortOrder = sortOrder
         self.globalShortcut = globalShortcut
     }
 
@@ -92,7 +92,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, repositoryRoots
         case hasCompletedWelcome, repositoryEditors, globalShortcut
-        case pinnedWorktrees, worktreeLabels, groupByRepository
+        case pinnedWorktrees, worktreeLabels, sortOrder, groupByRepository
     }
 
     public init(from decoder: Decoder) throws {
@@ -112,7 +112,13 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         worktreeLabels = try container.decodeIfPresent([String: String].self, forKey: .worktreeLabels) ?? [:]
         globalShortcut = container.contains(.globalShortcut)
             ? try container.decodeIfPresent(GlobalShortcut.self, forKey: .globalShortcut) : .default
-        groupByRepository = try container.decodeIfPresent(Bool.self, forKey: .groupByRepository) ?? true
+        if let rawSortOrder = try container.decodeIfPresent(String.self, forKey: .sortOrder) {
+            // An unfamiliar future order should not discard otherwise valid preferences.
+            sortOrder = WorktreeSortOrder(rawValue: rawSortOrder) ?? .activity
+        } else {
+            let legacyGrouping = try container.decodeIfPresent(Bool.self, forKey: .groupByRepository) ?? false
+            sortOrder = legacyGrouping ? .project : .activity
+        }
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -127,7 +133,9 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         try container.encode(repositoryEditors, forKey: .repositoryEditors)
         try container.encode(pinnedWorktrees.sorted(), forKey: .pinnedWorktrees)
         try container.encode(worktreeLabels, forKey: .worktreeLabels)
-        try container.encode(groupByRepository, forKey: .groupByRepository)
+        try container.encode(sortOrder, forKey: .sortOrder)
+        // Keep the closest available behavior when these preferences are read by v0.2.
+        try container.encode(sortOrder == .project, forKey: .groupByRepository)
         try container.encode(globalShortcut, forKey: .globalShortcut)
     }
 }

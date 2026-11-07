@@ -85,6 +85,7 @@ final class PreferencesTests {
         try withStore { store, _ in
             try Data("{\"schemaVersion\":1}".utf8).write(to: store.storageURL)
             #expect(try store.load() == TwigPreferences())
+            #expect(try store.load().sortOrder == .activity)
         }
     }
 
@@ -99,19 +100,19 @@ final class PreferencesTests {
     }
 
     @Test
-    func testPinsLabelsAndGroupingRoundTrip() throws {
+    func testPinsLabelsAndSortOrderRoundTrip() throws {
         try withStore { store, root in
             let folder = root.appendingPathComponent("worktree")
             let alternate = folder.appendingPathComponent("../worktree")
             var preferences = TwigPreferences()
             preferences.setPinned(true, for: alternate)
             preferences.setLabel("  Login   redesign\n", for: folder)
-            preferences.groupByRepository = false
+            preferences.sortOrder = .project
             try store.save(preferences)
             let reloaded = try store.load()
             #expect(reloaded.isPinned(folder))
             #expect(reloaded.label(for: alternate) == "Login redesign")
-            #expect(!reloaded.groupByRepository)
+            #expect(reloaded.sortOrder == .project)
             #expect(reloaded == preferences)
 
             preferences.setPinned(false, for: folder)
@@ -119,6 +120,63 @@ final class PreferencesTests {
             try store.save(preferences)
             #expect(try store.load().pinnedWorktrees.isEmpty)
             #expect(try store.load().worktreeLabels.isEmpty)
+        }
+    }
+
+    @Test(arguments: WorktreeSortOrder.allCases)
+    func testSortOrderPersistsWithLegacyCompatibility(sortOrder: WorktreeSortOrder) throws {
+        try withStore { store, _ in
+            let preferences = TwigPreferences(sortOrder: sortOrder)
+            try store.save(preferences)
+            #expect(try FilePreferencesStore(storageURL: store.storageURL).load() == preferences)
+            let encoded = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: store.storageURL)) as? [String: Any])
+            #expect(encoded["sortOrder"] as? String == sortOrder.rawValue)
+            #expect(encoded["groupByRepository"] as? Bool == (sortOrder == .project))
+            #expect(encoded["schemaVersion"] as? Int == 1)
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func testLegacyGroupingMigratesToSortOrder(grouped: Bool) throws {
+        try withStore { store, _ in
+            let legacy = Data("{\"schemaVersion\":1,\"groupByRepository\":\(grouped)}".utf8)
+            try legacy.write(to: store.storageURL)
+            let preferences = try store.load()
+            #expect(preferences == TwigPreferences(sortOrder: grouped ? .project : .activity))
+            try store.save(preferences)
+            #expect(try FilePreferencesStore(storageURL: store.storageURL).load() == preferences)
+        }
+    }
+
+    @Test(arguments: WorktreeSortOrder.allCases)
+    func testExplicitSortOrderWinsOverLegacyGrouping(sortOrder: WorktreeSortOrder) throws {
+        try withStore { store, _ in
+            let preferences = Data("{\"schemaVersion\":1,\"sortOrder\":\"\(sortOrder.rawValue)\",\"groupByRepository\":\(sortOrder == .activity)}".utf8)
+            try preferences.write(to: store.storageURL)
+            #expect(try store.load().sortOrder == sortOrder)
+        }
+    }
+
+    @Test
+    func testUnknownSortOrderFallsBackWithoutDiscardingPreferences() throws {
+        try withStore { store, root in
+            let folder = root.appendingPathComponent("worktree")
+            var expected = TwigPreferences(codexHome: "/tmp/custom-codex", fallbackIDE: .zed,
+                                           sortOrder: .activity, hasCompletedWelcome: true,
+                                           globalShortcut: nil, repositoryRoots: ["/projects/Atlas"])
+            expected.setPinned(true, for: folder)
+            expected.setLabel("Login redesign", for: folder)
+            expected.setOverride(WorktreeOverride(ide: .vscode, targetPath: "app.code-workspace"), for: folder)
+            expected.recordOpened(folder, at: Date(timeIntervalSince1970: 1_700_000_000))
+            try store.save(expected)
+            var future = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: store.storageURL)) as? [String: Any])
+            future["sortOrder"] = "future-order"
+            future["groupByRepository"] = true
+            try JSONSerialization.data(withJSONObject: future).write(to: store.storageURL)
+            let reloaded = try FilePreferencesStore(storageURL: store.storageURL).load()
+            #expect(reloaded == expected)
+            try store.save(reloaded)
+            #expect(try store.load() == expected)
         }
     }
 

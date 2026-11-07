@@ -3,116 +3,124 @@ import Testing
 @testable import TwigCore
 
 struct WorktreeOrganizationTests {
-    @Test
-    func pinsAppearOnceBeforeRepositoryGroups() {
+    @Test(arguments: WorktreeSortOrder.allCases)
+    func pinsAppearOnceFirstInSuppliedActivityOrder(sortOrder: WorktreeSortOrder) {
         let a = worktree("a", repository: "Atlas", common: "/projects/Atlas/.git")
         let b = worktree("b", repository: "Atlas", common: "/projects/Atlas/.git")
-        let c = worktree("c", repository: "Atlas", common: "/projects/Atlas/.git")
-        let sections = WorktreeOrganization.sections([a, b, c, b], pinnedIDs: [b.id], groupByRepository: true)
-        #expect(sections.map(\.id).first == "pinned")
-        #expect(sections.first?.worktrees.map(\.id) == [b.id])
-        #expect(sections.last?.title == "Atlas")
-        #expect(sections.last?.worktrees.map(\.id) == [a.id, c.id])
-        #expect(sections.flatMap(\.worktrees).count == 3)
+        let c = worktree("c", repository: "Website", common: "/projects/Website/.git")
+        let d = worktree("d", repository: "Atlas", common: "/projects/Atlas/.git")
+        let sections = WorktreeOrganization.sections([c, a, b, d, b], pinnedIDs: [b.id, c.id], sortOrder: sortOrder)
+        #expect(sections.first?.id == "pinned")
+        #expect(sections.first?.title == "Pinned")
+        #expect(sections.first?.isRepositoryGroup == false)
+        #expect(sections.first?.worktrees.map(\.id) == [c.id, b.id])
+        #expect(sections.last?.worktrees.map(\.id) == [a.id, d.id])
+        #expect(sections.flatMap(\.worktrees).map(\.id) == [c.id, b.id, a.id, d.id])
     }
 
     @Test
-    func equalNamesFromDifferentRepositoriesStaySeparate() {
+    func activityKeepsRepositoriesInterleavedAfterPins() {
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let b = worktree("b", repository: "Website", common: "/Website/.git")
+        let c = worktree("c", repository: "Atlas", common: "/Atlas/.git")
+        let pinned = worktree("pinned", repository: "Grove", common: "/Grove/.git")
+        let sections = WorktreeOrganization.sections([a, b, pinned, c], pinnedIDs: [pinned.id], sortOrder: .activity)
+        #expect(sections.map(\.title) == ["Pinned", "Recent"])
+        #expect(sections[1].worktrees.map(\.id) == [a.id, b.id, c.id])
+        #expect(sections.allSatisfy { !$0.isRepositoryGroup })
+    }
+
+    @Test
+    func projectSortsEveryRepositoryAndPreservesActivityWithinEach() {
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
+        let grove = worktree("grove", repository: "Grove", common: "/Grove/.git")
+        let website = worktree("website", repository: "Website", common: "/Website/.git")
+        let sections = WorktreeOrganization.sections([website, b, grove, a], pinnedIDs: [], sortOrder: .project)
+        #expect(sections.map(\.title) == ["Atlas", "Grove", "Website"])
+        #expect(sections.flatMap(\.worktrees).map(\.id) == [b.id, a.id, grove.id, website.id])
+        #expect(sections.allSatisfy(\.isRepositoryGroup))
+    }
+
+    @Test
+    func projectNamesUseNaturalAlphabeticalOrder() {
+        let names = ["Zebra", "App10", "beta", "App2", "alpha"]
+        let worktrees = names.map { worktree($0, repository: $0, common: "/projects/\($0)/.git") }
+        let sections = WorktreeOrganization.sections(worktrees, pinnedIDs: [], sortOrder: .project)
+        #expect(sections.map(\.title) == ["alpha", "App2", "App10", "beta", "Zebra"])
+    }
+
+    @Test
+    func equalNamesFromDifferentRepositoriesHaveStableSeparateSections() {
         let a = worktree("a", repository: "App", common: "/first/App/.git")
         let b = worktree("b", repository: "App", common: "/second/App/.git")
         let c = worktree("c", repository: "App", common: "/first/App/.git")
-        let sections = WorktreeOrganization.sections([a, b, c], pinnedIDs: [], groupByRepository: true)
+        let sections = WorktreeOrganization.sections([b, a, c], pinnedIDs: [], sortOrder: .project)
         #expect(sections.count == 2)
+        #expect(sections.map(\.title) == ["App", "App"])
         #expect(sections[0].worktrees.map(\.id) == [a.id, c.id])
         #expect(sections[1].worktrees.map(\.id) == [b.id])
-        #expect(sections[0].isRepositoryGroup)
-        #expect(!sections[1].isRepositoryGroup)
-        #expect(sections[1].title == "Other worktrees")
+        #expect(sections[0].id != sections[1].id)
+        #expect(sections.allSatisfy(\.isRepositoryGroup))
+
+        let changedActivity = WorktreeOrganization.sections([c, b, a], pinnedIDs: [], sortOrder: .project)
+        #expect(changedActivity.map(\.id) == sections.map(\.id))
+        #expect(changedActivity[0].worktrees.map(\.id) == [c.id, a.id])
     }
 
     @Test
-    func groupingPreservesFirstAppearanceAndWithinGroupOrder() {
-        let a = worktree("a", repository: "First", common: "/first/.git")
-        let b = worktree("b", repository: "Second", common: "/second/.git")
-        let c = worktree("c", repository: "First", common: "/first/.git")
-        let d = worktree("d", repository: "Second", common: "/second/.git")
-        let sections = WorktreeOrganization.sections([b, a, c, d], pinnedIDs: [], groupByRepository: true)
-        #expect(sections.map(\.title) == ["Second", "First"])
-        #expect(sections.flatMap(\.worktrees).map(\.id) == [b.id, d.id, a.id, c.id])
-    }
-
-    @Test
-    func ungroupedSearchCanPreserveRankWithoutPins() {
+    func activityWithoutPinsPreservesFlatSearchRank() {
         let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
-        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
-        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [], groupByRepository: false)
+        let b = worktree("b", repository: "Website", common: "/Website/.git")
+        let c = worktree("c", repository: "Atlas", common: "/Atlas/.git")
+        let sections = WorktreeOrganization.sections([c, b, a], pinnedIDs: [], sortOrder: .activity)
         #expect(sections.count == 1)
         #expect(sections[0].title == nil)
-        #expect(sections[0].worktrees.map(\.id) == [b.id, a.id])
+        #expect(!sections[0].isRepositoryGroup)
+        #expect(sections[0].worktrees.map(\.id) == [c.id, b.id, a.id])
     }
 
     @Test
     func missingRepositoryMetadataDoesNotMergeUnrelatedWorktrees() {
         let a = worktree("a", repository: "App", common: nil)
         let b = worktree("b", repository: "App", common: nil)
-        let sections = WorktreeOrganization.sections([a, b], pinnedIDs: [], groupByRepository: true)
-        #expect(sections.count == 1)
-        #expect(!sections[0].isRepositoryGroup)
-        #expect(sections[0].title == nil)
-        #expect(sections[0].worktrees.map(\.id) == [a.id, b.id])
-        #expect(WorktreeOrganization.sections([], pinnedIDs: [a.id], groupByRepository: true).isEmpty)
+        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [], sortOrder: .project)
+        #expect(sections.count == 2)
+        #expect(sections.map(\.title) == ["App", "App"])
+        #expect(sections[0].worktrees.map(\.id) == [a.id])
+        #expect(sections[1].worktrees.map(\.id) == [b.id])
+        #expect(sections.allSatisfy(\.isRepositoryGroup))
     }
 
     @Test
-    func singletonsAfterPinsHaveTheirOwnRecentHeading() {
+    func projectSingletonsIncludingPinnedSiblingsHaveVisibleBoundaries() {
         let pinned = worktree("pinned", repository: "Atlas", common: "/Atlas/.git")
         let sibling = worktree("sibling", repository: "Atlas", common: "/Atlas/.git")
         let other = worktree("other", repository: "Twig", common: "/Twig/.git")
-        let sections = WorktreeOrganization.sections([other, pinned, sibling],
-                                                     pinnedIDs: [pinned.id], groupByRepository: true)
-        #expect(sections.map(\.title) == ["Pinned", "Recent"])
-        #expect(sections[1].worktrees.map(\.id) == [other.id, sibling.id])
-        #expect(!sections[1].isRepositoryGroup)
+        let sections = WorktreeOrganization.sections([other, pinned, sibling], pinnedIDs: [pinned.id], sortOrder: .project)
+        #expect(sections.map(\.title) == ["Pinned", "Atlas", "Twig"])
+        #expect(sections[1].worktrees.map(\.id) == [sibling.id])
+        #expect(sections[2].worktrees.map(\.id) == [other.id])
+        #expect(sections.dropFirst().allSatisfy(\.isRepositoryGroup))
     }
 
-    @Test
-    func singletonsFollowRepositoryGroupsUnderAnExplicitHeading() {
-        let first = worktree("first", repository: "Website", common: "/Website/.git")
-        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
-        let middle = worktree("middle", repository: "Twig", common: "/Twig/.git")
-        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
-        let last = worktree("last", repository: "Notes", common: "/Notes/.git")
-        let sections = WorktreeOrganization.sections([first, a, middle, b, last],
-                                                     pinnedIDs: [], groupByRepository: true)
-        #expect(sections.map(\.title) == ["Atlas", "Other worktrees"])
-        #expect(sections[0].worktrees.map(\.id) == [a.id, b.id])
-        #expect(sections[1].worktrees.map(\.id) == [first.id, middle.id, last.id])
-        #expect(sections[1].id == "other")
-        #expect(!sections[1].isRepositoryGroup)
-    }
-
-    @Test
-    func pinsGroupsAndSingletonsAllHaveVisibleBoundaries() {
-        let pinned = worktree("pinned", repository: "Notes", common: "/Notes/.git")
-        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
-        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
-        let other = worktree("other", repository: "Twig", common: "/Twig/.git")
-        let sections = WorktreeOrganization.sections([other, a, pinned, b],
-                                                     pinnedIDs: [pinned.id], groupByRepository: true)
-        #expect(sections.map(\.title) == ["Pinned", "Atlas", "Other worktrees"])
-        #expect(sections.flatMap(\.worktrees).map(\.id) == [pinned.id, a.id, b.id, other.id])
-        #expect(sections.allSatisfy { $0.title != nil })
-    }
-
-    @Test
-    func standaloneSingletonListKeepsMinimalPresentationAndOrder() {
+    @Test(arguments: WorktreeSortOrder.allCases)
+    func allPinnedWorktreesDoNotLeaveEmptySections(sortOrder: WorktreeSortOrder) {
         let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
         let b = worktree("b", repository: "Twig", common: "/Twig/.git")
-        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [], groupByRepository: true)
+        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [a.id, b.id, "missing"], sortOrder: sortOrder)
         #expect(sections.count == 1)
-        #expect(sections[0].title == nil)
+        #expect(sections[0].id == "pinned")
         #expect(sections[0].worktrees.map(\.id) == [b.id, a.id])
-        #expect(!sections[0].isRepositoryGroup)
+    }
+
+    @Test(arguments: WorktreeSortOrder.allCases)
+    func missingPinnedWorktreesDoNotCreateSections(sortOrder: WorktreeSortOrder) {
+        #expect(WorktreeOrganization.sections([], pinnedIDs: ["missing"], sortOrder: sortOrder).isEmpty)
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let sections = WorktreeOrganization.sections([a], pinnedIDs: ["missing"], sortOrder: sortOrder)
+        #expect(sections.count == 1)
+        #expect(sections[0].id != "pinned")
     }
 
     @Test
@@ -125,7 +133,9 @@ struct WorktreeOrganizationTests {
         try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: common)
         let a = worktree("a", repository: "App", common: common.path)
         let b = worktree("b", repository: "App", common: alias.path)
-        #expect(WorktreeOrganization.sections([a, b], pinnedIDs: [], groupByRepository: true).count == 1)
+        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [], sortOrder: .project)
+        #expect(sections.count == 1)
+        #expect(sections[0].worktrees.map(\.id) == [b.id, a.id])
     }
 
     private func worktree(_ name: String, repository: String, common: String?) -> Worktree {
