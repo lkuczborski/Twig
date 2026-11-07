@@ -39,7 +39,7 @@ struct WorktreeOrganizationTests {
         let sections = WorktreeOrganization.sections([website, b, grove, a], pinnedIDs: [], sortOrder: .project)
         #expect(sections.map(\.title) == ["Atlas", "Grove", "Website"])
         #expect(sections.flatMap(\.worktrees).map(\.id) == [b.id, a.id, grove.id, website.id])
-        #expect(sections.allSatisfy(\.isRepositoryGroup))
+        #expect(sections.allSatisfy { $0.isRepositoryGroup })
     }
 
     @Test
@@ -61,7 +61,7 @@ struct WorktreeOrganizationTests {
         #expect(sections[0].worktrees.map(\.id) == [a.id, c.id])
         #expect(sections[1].worktrees.map(\.id) == [b.id])
         #expect(sections[0].id != sections[1].id)
-        #expect(sections.allSatisfy(\.isRepositoryGroup))
+        #expect(sections.allSatisfy { $0.isRepositoryGroup })
 
         let changedActivity = WorktreeOrganization.sections([c, b, a], pinnedIDs: [], sortOrder: .project)
         #expect(changedActivity.map(\.id) == sections.map(\.id))
@@ -89,7 +89,7 @@ struct WorktreeOrganizationTests {
         #expect(sections.map(\.title) == ["App", "App"])
         #expect(sections[0].worktrees.map(\.id) == [a.id])
         #expect(sections[1].worktrees.map(\.id) == [b.id])
-        #expect(sections.allSatisfy(\.isRepositoryGroup))
+        #expect(sections.allSatisfy { $0.isRepositoryGroup })
     }
 
     @Test
