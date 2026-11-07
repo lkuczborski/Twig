@@ -43,6 +43,7 @@ public enum LaunchResolver {
         detection: ProjectDetection,
         installed: Set<IDEID>,
         override: WorktreeOverride? = nil,
+        repositoryIDE: IDEID? = nil,
         fallbackIDE: IDEID? = nil
     ) -> LaunchResolution {
         let candidates = detection.candidates.enumerated().sorted {
@@ -62,6 +63,19 @@ public enum LaunchResolver {
                 reason: installed.contains(override.ide)
                     ? "Your editor choice for this worktree"
                     : "Your chosen editor, \(override.ide.displayName), is not installed",
+                candidate: candidate,
+                isOverride: true
+            )
+        }
+
+        if let repositoryIDE {
+            let candidate = candidates.first { $0.ide == repositoryIDE }
+            return LaunchResolution(
+                destination: installed.contains(repositoryIDE) ? .ide(repositoryIDE) : .missingApp(repositoryIDE),
+                target: safeTarget(candidate?.target, folder: folder),
+                reason: installed.contains(repositoryIDE)
+                    ? "Your editor choice for this repository"
+                    : "Your repository editor, \(repositoryIDE.displayName), is not installed",
                 candidate: candidate,
                 isOverride: true
             )
@@ -95,6 +109,19 @@ public enum LaunchResolver {
         return LaunchResolution(
             destination: .finder, target: folder,
             reason: "No matching installed editor; open this worktree in Finder"
+        )
+    }
+
+    /// A temporary editor choice intentionally ignores saved worktree/repository defaults.
+    public static func resolveOnce(
+        folder: URL, detection: ProjectDetection, installed: Set<IDEID>, ide: IDEID
+    ) -> LaunchResolution {
+        let resolution = resolve(folder: folder, detection: detection, installed: installed,
+                                 override: WorktreeOverride(ide: ide))
+        return LaunchResolution(
+            destination: resolution.destination, target: resolution.target,
+            reason: installed.contains(ide) ? "Open once in \(ide.displayName)" : resolution.reason,
+            candidate: resolution.candidate
         )
     }
 

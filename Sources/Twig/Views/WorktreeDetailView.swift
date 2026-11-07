@@ -20,12 +20,20 @@ struct WorktreeDetailView: View {
                                 HStack {
                                     Text(store.editorName(for: item)).font(.headline)
                                     Spacer()
+                                    Button("Terminal") { Task { await store.openTerminal(item) } }
                                     Button("Open") { Task { await store.open(item) } }.keyboardShortcut(.return)
                                 }
                                 Text(store.resolution(for: item).reason).font(.callout).foregroundStyle(.secondary)
                                 Text(store.resolution(for: item).target.path).font(.caption.monospaced()).textSelection(.enabled)
                                 if store.override(for: item) != nil {
-                                    Button("Restore Automatic") { store.setOverride(nil, for: item) }
+                                    Button(store.repositoryEditor(for: item) == nil ? "Restore Automatic" : "Use Repository Default") {
+                                        store.setOverride(nil, for: item)
+                                    }
+                                }
+                                Menu("Editor preferences") { WorktreeOpeningActions(item: item, store: store) }
+                                if let repositoryEditor = store.repositoryEditor(for: item) {
+                                    Text("\(repositoryEditor.displayName) is the default for this repository. Individual worktree choices take priority.")
+                                        .font(.caption).foregroundStyle(.secondary)
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(6)
                         }

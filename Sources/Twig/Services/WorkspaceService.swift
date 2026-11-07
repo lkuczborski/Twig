@@ -47,6 +47,18 @@ final class WorkspaceService {
         guard NSWorkspace.shared.open(folder) else { throw WorkspaceError.finderFailed }
     }
 
+    func openTerminal(at folder: URL) async throws {
+        let target = try TerminalLaunchTarget(folder: folder)
+        guard let application = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: TerminalLaunchTarget.bundleIdentifier
+        ) else { throw WorkspaceError.missingApplication("Terminal") }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        _ = try await NSWorkspace.shared.open(
+            [target.directory], withApplicationAt: application, configuration: configuration
+        )
+    }
+
     func reveal(_ folder: URL) {
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }
@@ -62,7 +74,7 @@ enum WorkspaceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingTarget(let path): "This worktree or project no longer exists: \(path). Refresh the list."
-        case .missingApplication(let name): "\(name) is not installed. Choose another editor or restore Automatic for this worktree."
+        case .missingApplication(let name): "\(name) is not installed. Choose another editor or restore Automatic in the editor preferences."
         case .finderFailed: "Finder could not open this folder."
         }
     }

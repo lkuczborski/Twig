@@ -39,25 +39,8 @@ struct WorktreeRowView: View {
             .accessibilityLabel("Open \(item.worktree.repositoryName), \(branchLabel), in \(store.editorName(for: item))")
 
             Menu {
-                Button("Open in \(shortLabel(store.editorName(for: item), limit: 20))") { Task { await store.open(item) } }
-                Menu("Always open with") {
-                    Button {
-                        store.setOverride(nil, for: item)
-                    } label: {
-                        Label("Automatic", systemImage: store.override(for: item) == nil ? "checkmark" : "sparkles")
-                    }
-                    Divider()
-                    ForEach(IDEID.allCases.filter { store.installed.contains($0) }, id: \.self) { ide in
-                        Button {
-                            store.setOverride(WorktreeOverride(ide: ide), for: item)
-                        } label: {
-                            if store.override(for: item)?.ide == ide {
-                                Label(ide.displayName, systemImage: "checkmark")
-                            } else { Text(ide.displayName) }
-                        }
-                    }
-                    if store.installed.isEmpty { Text("No supported IDEs installed") }
-                }
+                WorktreeOpeningActions(item: item, store: store)
+                Divider()
                 Button("Project & detection details…") {
                     store.selectedID = item.id
                     showDetails()

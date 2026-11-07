@@ -14,15 +14,17 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     public var overrides: [String: WorktreeOverride]
     public var lastOpened: [String: Date]
     public var hasCompletedWelcome: Bool
+    public var repositoryEditors: [String: IDEID]
 
     public init(codexHome: String? = nil, fallbackIDE: IDEID? = nil,
                 overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
-                hasCompletedWelcome: Bool = false) {
+                repositoryEditors: [String: IDEID] = [:], hasCompletedWelcome: Bool = false) {
         self.codexHome = codexHome
         self.fallbackIDE = fallbackIDE
         self.overrides = overrides
         self.lastOpened = lastOpened
         self.hasCompletedWelcome = hasCompletedWelcome
+        self.repositoryEditors = repositoryEditors
     }
 
     public func overrideForWorktree(_ folder: URL) -> WorktreeOverride? {
@@ -41,8 +43,16 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         lastOpened[WorktreePath.key(for: folder)] = date
     }
 
+    public func editorForRepository(_ worktree: Worktree) -> IDEID? {
+        repositoryEditors[RepositoryIdentity.key(for: worktree)]
+    }
+
+    public mutating func setEditor(_ ide: IDEID?, forRepository worktree: Worktree) {
+        repositoryEditors[RepositoryIdentity.key(for: worktree)] = ide
+    }
+
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, hasCompletedWelcome
+        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, hasCompletedWelcome, repositoryEditors
     }
 
     public init(from decoder: Decoder) throws {
@@ -56,6 +66,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         overrides = try container.decodeIfPresent([String: WorktreeOverride].self, forKey: .overrides) ?? [:]
         lastOpened = try container.decodeIfPresent([String: Date].self, forKey: .lastOpened) ?? [:]
         hasCompletedWelcome = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedWelcome) ?? false
+        repositoryEditors = try container.decodeIfPresent([String: IDEID].self, forKey: .repositoryEditors) ?? [:]
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -66,5 +77,6 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         try container.encode(overrides, forKey: .overrides)
         try container.encode(lastOpened, forKey: .lastOpened)
         try container.encode(hasCompletedWelcome, forKey: .hasCompletedWelcome)
+        try container.encode(repositoryEditors, forKey: .repositoryEditors)
     }
 }

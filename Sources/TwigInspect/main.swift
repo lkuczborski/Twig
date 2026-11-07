@@ -84,7 +84,8 @@ private func inspect() throws {
         let detection = detector.detect(at: worktree.folder)
         let resolution = LaunchResolver.resolve(
             folder: worktree.folder, detection: detection, installed: installed,
-            override: preferences.overrideForWorktree(worktree.folder), fallbackIDE: preferences.fallbackIDE
+            override: preferences.overrideForWorktree(worktree.folder),
+            repositoryIDE: preferences.editorForRepository(worktree), fallbackIDE: preferences.fallbackIDE
         )
         let editor: String
         let missing: Bool

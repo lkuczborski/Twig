@@ -87,7 +87,12 @@ final class TwigStore {
 
     func resolution(for item: ScannedWorktree) -> LaunchResolution {
         LaunchResolver.resolve(folder: item.worktree.folder, detection: item.detection,
-                               installed: installed, override: override(for: item), fallbackIDE: preferences.fallbackIDE)
+                               installed: installed, override: override(for: item),
+                               repositoryIDE: repositoryEditor(for: item), fallbackIDE: preferences.fallbackIDE)
+    }
+
+    func repositoryEditor(for item: ScannedWorktree) -> IDEID? {
+        preferences.editorForRepository(item.worktree)
     }
 
     func editorName(for item: ScannedWorktree) -> String {
@@ -222,23 +227,49 @@ final class TwigStore {
         scheduleIfVisible()
     }
 
-    func open(_ item: ScannedWorktree) async {
+    func open(_ item: ScannedWorktree, onceWith ide: IDEID? = nil) async {
         guard openingID == nil else { return }
         openingID = item.id
         defer { openingID = nil }
         await processPending(allowWhileHidden: true)
         let current = items.first { $0.id == item.id } ?? item
         do {
-            try await workspace.open(resolution(for: current))
-            var updated = preferences
-            updated.lastOpened[WorktreePath.key(for: current.worktree.folder)] = Date()
-            save(updated)
+            let destination = ide.map {
+                LaunchResolver.resolveOnce(folder: current.worktree.folder, detection: current.detection,
+                                           installed: installed, ide: $0)
+            } ?? resolution(for: current)
+            try await workspace.open(destination)
+            recordOpened(current)
         } catch { errorMessage = error.localizedDescription }
+    }
+
+    func openTerminal(_ item: ScannedWorktree) async {
+        guard openingID == nil else { return }
+        openingID = item.id
+        defer { openingID = nil }
+        await processPending(allowWhileHidden: true)
+        let current = items.first { $0.id == item.id } ?? item
+        do {
+            try await workspace.openTerminal(at: current.worktree.folder)
+            recordOpened(current)
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    private func recordOpened(_ item: ScannedWorktree) {
+        var updated = preferences
+        updated.recordOpened(item.worktree.folder, at: Date())
+        save(updated)
     }
 
     func setOverride(_ override: WorktreeOverride?, for item: ScannedWorktree) {
         var updated = preferences
         updated.overrides[WorktreePath.key(for: item.worktree.folder)] = override
+        save(updated)
+    }
+
+    func setRepositoryEditor(_ ide: IDEID?, for item: ScannedWorktree) {
+        var updated = preferences
+        updated.setEditor(ide, forRepository: item.worktree)
         save(updated)
     }
 
