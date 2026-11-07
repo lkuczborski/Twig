@@ -77,7 +77,9 @@ private func inspect() throws {
         }
     })
     installed.formUnion(InstalledApplicationScanner().scan(in: InstalledApplicationScanner.standardDirectories).keys)
-    let discovery = WorktreeDiscoverer().discover(in: home)
+    let discovery = WorktreeCatalog().discover(codexHome: home, repositoryRoots: preferences.repositoryRoots.map {
+        URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true)
+    })
     warnings += discovery.warnings
     let detector = ProjectDetector()
     let rows = discovery.worktrees.map { worktree in

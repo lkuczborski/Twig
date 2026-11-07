@@ -56,15 +56,20 @@ public struct ChangeRouting: Sendable {
     public let worktreesRoot: URL
     public let worktrees: [WatchedWorktree]
     public let applicationDirectories: [URL]
+    public let repositoryRoots: [URL]
+    public let repositoryGitDirectories: [URL]
 
-    public init(worktreesRoot: URL, worktrees: [WatchedWorktree], applicationDirectories: [URL]) {
+    public init(worktreesRoot: URL, worktrees: [WatchedWorktree], applicationDirectories: [URL],
+                repositoryRoots: [URL] = [], repositoryGitDirectories: [URL] = []) {
         self.worktreesRoot = worktreesRoot
         self.worktrees = worktrees
         self.applicationDirectories = applicationDirectories
+        self.repositoryRoots = repositoryRoots
+        self.repositoryGitDirectories = repositoryGitDirectories
     }
 
     public var watchRoots: [URL] {
-        let desired = [worktreesRoot] + applicationDirectories + worktrees.flatMap {
+        let desired = [worktreesRoot] + applicationDirectories + repositoryRoots + repositoryGitDirectories + worktrees.map(\.folder) + worktrees.flatMap {
             [$0.gitDirectory, $0.commonGitDirectory].compactMap { $0 }
         }
         return FileEventWatcher.minimalRoots(desired.map { FileEventWatcher.existingWatchRoot(for: $0) })
@@ -74,6 +79,10 @@ public struct ChangeRouting: Sendable {
         var result = RefreshRequest()
         let root = canonicalPath(worktreesRoot.path)
         let applicationRoots = applicationDirectories.map { canonicalPath($0.path) }
+        let explicitRoots = repositoryRoots.map { canonicalPath($0.path) }
+        let metadataRoots = Set((repositoryGitDirectories + worktrees.flatMap {
+            [$0.gitDirectory, $0.commonGitDirectory].compactMap { $0 }
+        }).map { canonicalPath($0.path) })
         for event in events {
             let path = canonicalPath(event.path)
             // Lost events and moved roots are advisory: discard inference caches and rebuild subscriptions.
@@ -86,34 +95,46 @@ public struct ChangeRouting: Sendable {
                 // Parent notifications also catch a previously absent ~/Applications directory.
                 result.applications = true
             }
-            if isWithin(path, root: root) {
-                let matches = worktrees.filter { isWithin(path, root: canonicalPath($0.folder.path)) }
-                if matches.isEmpty {
-                    result.worktrees = true
-                    result.allProjects = true
-                } else {
-                    for tree in matches {
-                        let folder = canonicalPath(tree.folder.path)
-                        let components = String(path.dropFirst(folder.count)).split(separator: "/").map(String.init)
-                        guard !components.contains(where: Self.ignoredDirectories.contains) else { continue }
-                        result.worktrees = true
-                        result.projectIDs.insert(tree.id)
-                    }
-                }
-            } else if isWithin(root, root: path) {
+            let matches = worktrees.filter { isWithin(path, root: canonicalPath($0.folder.path)) }
+            for tree in matches {
+                let folder = canonicalPath(tree.folder.path)
+                let components = String(path.dropFirst(folder.count)).split(separator: "/").map(String.init)
+                guard !components.contains(where: Self.ignoredDirectories.contains) else { continue }
+                result.worktrees = true
+                result.projectIDs.insert(tree.id)
+            }
+            for tree in worktrees where isWithin(canonicalPath(tree.folder.path), root: path) && path != canonicalPath(tree.folder.path) {
+                result.worktrees = true
+                result.allProjects = true
+                result.reconfigureWatcher = true
+            }
+            if (isWithin(path, root: root) && matches.isEmpty) || isWithin(root, root: path) {
                 // Creation/removal/rename of the configured root can be coalesced to its ancestor.
                 result.worktrees = true
                 result.allProjects = true
             }
-            for tree in worktrees {
-                if let git = tree.gitDirectory, isWithin(path, root: canonicalPath(git.path)) {
+            for explicitRoot in explicitRoots {
+                if isWithin(explicitRoot, root: path) {
                     result.worktrees = true
+                    result.reconfigureWatcher = true
+                } else if isWithin(path, root: explicitRoot), matches.isEmpty,
+                          !metadataRoots.contains(where: { isWithin(path, root: $0) }) {
+                    let components = String(path.dropFirst(explicitRoot.count)).split(separator: "/").map(String.init)
+                    let newGitMetadata = components.first == ".git" && !["objects", "hooks"].contains(components.dropFirst().first ?? "")
+                    guard !components.contains(where: Self.ignoredDirectories.contains) || newGitMetadata else { continue }
+                    result.worktrees = true
+                    result.reconfigureWatcher = true
                 }
-                if let common = tree.commonGitDirectory {
-                    let common = canonicalPath(common.path)
-                    if path == common || isWithin(path, root: common + "/refs") {
-                        result.worktrees = true
-                    }
+            }
+            for metadata in metadataRoots where isWithin(path, root: metadata) {
+                let components = String(path.dropFirst(metadata.count)).split(separator: "/").map(String.init)
+                if components.isEmpty || ["HEAD", "index", "packed-refs", "refs", "logs", "commondir", "gitdir", "config"].contains(components.first ?? "") {
+                    result.worktrees = true
+                } else if components.first == "worktrees" {
+                    // A new registered checkout may live anywhere on disk. Follow its
+                    // reciprocal pointer on the next scan and rebuild subscriptions.
+                    result.worktrees = true
+                    result.reconfigureWatcher = true
                 }
             }
         }

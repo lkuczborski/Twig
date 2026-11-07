@@ -13,6 +13,8 @@ final class TwigStore {
     private(set) var openingID: String?
     private(set) var lastRefreshed: Date?
     private(set) var warnings: [String] = []
+    private(set) var repositoryStatuses: [RepositoryRootStatus] = []
+    private(set) var isAddingRepository = false
     private(set) var preferencesNeedRecovery = false
     var errorMessage: String?
     var selectedID: String?
@@ -67,6 +69,13 @@ final class TwigStore {
             let left = activityDate(for: $0), right = activityDate(for: $1)
             return left == right ? $0.id < $1.id : left > right
         }
+    }
+
+    var repositoryRoots: [URL] {
+        var seen: Set<String> = []
+        return preferences.repositoryRoots.map {
+            URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true).standardizedFileURL.resolvingSymlinksInPath()
+        }.filter { seen.insert($0.path).inserted }
     }
 
     var filteredItems: [ScannedWorktree] {
@@ -219,15 +228,18 @@ final class TwigStore {
             if request.applications || !hasApplicationCatalog { await refreshApplications() }
             if request.worktrees {
                 let root = codexHome
+                let explicitRoots = repositoryRoots
                 let snapshot = await scanner.scan(
                     codexHome: root,
-                    invalidatedWorktrees: request.allProjects ? nil : request.projectIDs
+                    invalidatedWorktrees: request.allProjects ? nil : request.projectIDs,
+                    repositoryRoots: explicitRoots
                 )
                 if Task.isCancelled { syncState.invalidate(request); return }
-                if codexHome != root { syncState.invalidate(.full); continue }
+                if codexHome != root || repositoryRoots != explicitRoots { syncState.invalidate(.full); continue }
                 items = snapshot.items
                 reconcileHighlight()
                 warnings = snapshot.warnings
+                repositoryStatuses = snapshot.repositoryStatuses
                 lastRefreshed = Date()
             }
             configureWatcher(force: request.reconfigureWatcher, since: baseline)
@@ -242,7 +254,9 @@ final class TwigStore {
                                 gitDirectory: $0.worktree.gitDirectory,
                                 commonGitDirectory: $0.worktree.commonGitDirectory)
             },
-            applicationDirectories: InstalledApplicationScanner.standardDirectories
+            applicationDirectories: InstalledApplicationScanner.standardDirectories,
+            repositoryRoots: repositoryRoots,
+            repositoryGitDirectories: repositoryStatuses.compactMap(\.commonGitDirectory)
         )
         routing = configuration
         let roots = configuration.watchRoots
@@ -384,6 +398,53 @@ final class TwigStore {
         var updated = preferences
         updated.codexHome = cleaned.isEmpty ? nil : cleaned
         if save(updated) { discoverySettingsChanged() }
+    }
+
+    func chooseRepository() {
+        let panel = NSOpenPanel()
+        panel.title = "Add repository"
+        panel.message = "Choose a Git checkout or bare repository. Twig will find its local worktrees."
+        panel.prompt = "Add Repository"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.showsHiddenFiles = true
+        NSApp.activate(ignoringOtherApps: true)
+        if panel.runModal() == .OK, let url = panel.url {
+            Task { await addRepository(url) }
+        }
+    }
+
+    func addRepository(_ url: URL) async {
+        guard !isAddingRepository else { return }
+        isAddingRepository = true
+        defer { isAddingRepository = false }
+        let canonical = url.standardizedFileURL.resolvingSymlinksInPath()
+        let result = await Task.detached(priority: .utility) {
+            RepositoryDiscoverer().discover(at: canonical)
+        }.value
+        guard result.status.isAvailable else {
+            errorMessage = result.status.message ?? "The repository is unavailable."
+            return
+        }
+        var updated = preferences
+        if !repositoryRoots.contains(where: { $0.path == canonical.path }) { updated.repositoryRoots.append(canonical.path) }
+        if save(updated) {
+            discoverySettingsChanged()
+            await refresh()
+        }
+    }
+
+    /// Removes only a discovery source. The repository and its worktrees stay on disk.
+    func removeRepository(_ root: URL) {
+        var updated = preferences
+        updated.repositoryRoots.removeAll {
+            WorktreePath.key(for: URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath)) == root.path
+        }
+        if save(updated) {
+            discoverySettingsChanged()
+            Task { await refresh() }
+        }
     }
 
     func openFolder(_ item: ScannedWorktree) {

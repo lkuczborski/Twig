@@ -10,6 +10,7 @@ public enum WorktreePath {
 public struct TwigPreferences: Codable, Equatable, Sendable {
     public static let currentSchemaVersion = 1
     public var codexHome: String?
+    public var repositoryRoots: [String]
     public var fallbackIDE: IDEID?
     public var overrides: [String: WorktreeOverride]
     public var lastOpened: [String: Date]
@@ -24,8 +25,9 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
                 overrides: [String: WorktreeOverride] = [:], lastOpened: [String: Date] = [:],
                 pinnedWorktrees: Set<String> = [], worktreeLabels: [String: String] = [:],
                 groupByRepository: Bool = true, repositoryEditors: [String: IDEID] = [:],
-                hasCompletedWelcome: Bool = false, globalShortcut: GlobalShortcut? = .default) {
+                hasCompletedWelcome: Bool = false, globalShortcut: GlobalShortcut? = .default, repositoryRoots: [String] = []) {
         self.codexHome = codexHome
+        self.repositoryRoots = repositoryRoots
         self.fallbackIDE = fallbackIDE
         self.overrides = overrides
         self.lastOpened = lastOpened
@@ -88,7 +90,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened
+        case schemaVersion, codexHome, fallbackIDE, overrides, lastOpened, repositoryRoots
         case hasCompletedWelcome, repositoryEditors, globalShortcut
         case pinnedWorktrees, worktreeLabels, groupByRepository
     }
@@ -99,6 +101,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
         guard version == Self.currentSchemaVersion else {
             throw PreferencesStoreError.unsupportedVersion(version)
         }
+        repositoryRoots = try container.decodeIfPresent([String].self, forKey: .repositoryRoots) ?? []
         codexHome = try container.decodeIfPresent(String.self, forKey: .codexHome)
         fallbackIDE = try container.decodeIfPresent(IDEID.self, forKey: .fallbackIDE)
         overrides = try container.decodeIfPresent([String: WorktreeOverride].self, forKey: .overrides) ?? [:]
@@ -114,6 +117,7 @@ public struct TwigPreferences: Codable, Equatable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(repositoryRoots, forKey: .repositoryRoots)
         try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
         try container.encodeIfPresent(codexHome, forKey: .codexHome)
         try container.encodeIfPresent(fallbackIDE, forKey: .fallbackIDE)

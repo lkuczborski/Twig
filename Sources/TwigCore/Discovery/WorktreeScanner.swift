@@ -11,6 +11,7 @@ public struct ScanSnapshot: Sendable {
     public let warnings: [String]
     /// Useful for verifying that a metadata-only refresh reuses project inference.
     public let detectionsPerformed: Int
+    public let repositoryStatuses: [RepositoryRootStatus]
 }
 
 /// Serializes filesystem work and retains project detection until its checkout changes.
@@ -21,10 +22,10 @@ public actor WorktreeScanner {
     public init() {}
 
     /// nil invalidation forces project detection; an empty set refreshes Git/activity only.
-    public func scan(codexHome: URL, invalidatedWorktrees: Set<String>? = nil) -> ScanSnapshot {
+    public func scan(codexHome: URL, invalidatedWorktrees: Set<String>? = nil, repositoryRoots: [URL] = []) -> ScanSnapshot {
         let home = codexHome.standardizedFileURL.resolvingSymlinksInPath()
         if home != cachedHome { detections.removeAll(); cachedHome = home }
-        let result = WorktreeDiscoverer().discover(in: home)
+        let result = WorktreeCatalog().discover(codexHome: home, repositoryRoots: repositoryRoots)
         let detector = ProjectDetector()
         var items: [ScannedWorktree] = []
         var performed = 0
@@ -43,6 +44,7 @@ public actor WorktreeScanner {
         }
         let activeIDs = Set(result.worktrees.map(\.id))
         detections = detections.filter { activeIDs.contains($0.key) }
-        return ScanSnapshot(items: items, warnings: result.warnings, detectionsPerformed: performed)
+        return ScanSnapshot(items: items, warnings: result.warnings, detectionsPerformed: performed,
+                            repositoryStatuses: result.repositoryStatuses)
     }
 }

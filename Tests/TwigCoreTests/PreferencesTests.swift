@@ -122,6 +122,16 @@ final class PreferencesTests {
         }
     }
 
+    @Test
+    func testRepositoryRootsPersistEvenWhenUnavailable() throws {
+        try withStore { store, root in
+            var preferences = TwigPreferences()
+            preferences.repositoryRoots = [root.appendingPathComponent("missing-drive/Repo").path, "/tmp/second-repository"]
+            try store.save(preferences)
+            #expect(try store.load().repositoryRoots == preferences.repositoryRoots)
+        }
+    }
+
     private func withStore(_ body: (FilePreferencesStore, URL) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("TwigPreferencesTests-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

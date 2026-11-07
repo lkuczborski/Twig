@@ -15,6 +15,7 @@ struct TwigSettingsView: View {
                 Button("Welcome to Twig…", action: showWelcome)
             }
             Section("Keyboard") { ShortcutRecorderView(store: store) }
+            RepositoryRootsSection(store: store)
             Section("Worktree discovery") {
                 TextField("Codex home", text: $codexPath, prompt: Text("Automatic (~/.codex)"))
                 HStack {
@@ -55,6 +56,9 @@ struct TwigSettingsView: View {
         .frame(width: 500, height: 560)
         .onAppear { codexPath = store.preferences.codexHome ?? "" }
         .task { await store.refreshApplications() }
+        .background(WindowVisibilityObserver { visible in
+            store.contentVisibilityChanged("repositorySettings", isVisible: visible)
+        }.frame(width: 0, height: 0))
         .confirmationDialog("Reset unreadable preferences?", isPresented: $confirmRecovery) {
             Button("Back Up & Reset") { store.recoverPreferences(); codexPath = "" }
             Button("Cancel", role: .cancel) {}

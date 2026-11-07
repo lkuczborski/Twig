@@ -59,7 +59,8 @@ public struct WorktreeDiscoverer: Sendable {
         )
     }
 
-    private func inspect(_ folder: URL) throws -> Worktree {
+    /// Shared with explicit repository discovery; reads only bounded Git metadata.
+    func inspect(_ folder: URL) throws -> Worktree {
         let dotGit = folder.appendingPathComponent(".git")
         let attributes = try dotGit.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
         guard attributes.isSymbolicLink != true else { throw MetadataError.invalid("The .git entry is a symbolic link.") }

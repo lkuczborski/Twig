@@ -64,6 +64,7 @@ struct WorktreeMenuView: View {
                 Button("Open Previous Worktree") { Task { await store.openPrevious() } }
                     .keyboardShortcut(.return, modifiers: [.command, .shift])
                     .disabled(store.previousItem == nil)
+                Button("Add Repository…") { store.chooseRepository() }.disabled(store.isAddingRepository)
                 Divider()
                 Button("Refresh") { Task { await store.refresh() } }.keyboardShortcut("r")
                 Divider()
@@ -153,8 +154,11 @@ struct WorktreeMenuView: View {
                     Text("Loading worktrees…").foregroundStyle(.secondary)
                 } else {
                     Text("No worktrees").font(.system(size: 13, weight: .medium))
-                    Text("Choose your Codex folder in Settings.").font(.caption).foregroundStyle(.secondary)
-                    Button("Settings…") { showSettings() }
+                    Text("Add a Git repository or choose your Codex folder.").font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Button("Add Repository…") { store.chooseRepository() }.disabled(store.isAddingRepository)
+                        Button("Settings…") { showSettings() }
+                    }
                 }
             }.frame(maxWidth: .infinity)
         } else {
