@@ -2,6 +2,7 @@
 """Create disposable, real Git repositories for Twig's native review build."""
 import json
 import os
+from datetime import datetime, time as day_time, timedelta
 from pathlib import Path
 import subprocess
 import sys
@@ -9,9 +10,9 @@ import tempfile
 import time
 
 if len(sys.argv) not in (2, 3):
-    raise SystemExit("Usage: make_demo.py OUTPUT_PARENT [--demo|--demo-welcome|--demo-details]")
+    raise SystemExit("Usage: make_demo.py OUTPUT_PARENT [--demo|--demo-welcome|--demo-details|--demo-activity]")
 mode = sys.argv[2] if len(sys.argv) == 3 else "--demo"
-if mode not in ("--demo", "--demo-welcome", "--demo-details"):
+if mode not in ("--demo", "--demo-welcome", "--demo-details", "--demo-activity"):
     raise SystemExit(f"Unknown demo mode: {mode}")
 
 parent = Path(sys.argv[1]).resolve()
@@ -86,6 +87,58 @@ def worktree(repo, bucket, branch):
     git(repo, "worktree", "add", "-q", "-b", branch, str(folder))
     return folder
 
+def activity_dates(now):
+    """Use local calendar days, including the local UTC offset on each date."""
+    today = now.date()
+    start_of_day = datetime.combine(today, day_time())
+    elapsed = (now - start_of_day).total_seconds()
+    week_start = today - timedelta(days=today.weekday())
+    # On Monday there is no earlier day in the current week. Keep accessibility
+    # in Today in that case, rather than inventing a weekday section.
+    earlier_this_week = today - timedelta(days=min(2, today.weekday()))
+    previous_thursday = week_start - timedelta(days=4)
+    # A previous-month entry must also predate Last week, even near a month boundary.
+    earlier_month = min(today.replace(day=1) - timedelta(days=7), week_start - timedelta(days=8))
+    return (
+        now - timedelta(seconds=min(90, elapsed / 3)),
+        now - timedelta(seconds=min(11 * 60, elapsed * 2 / 3)),
+        min(datetime.combine(earlier_this_week, day_time(11)), start_of_day + timedelta(seconds=elapsed / 4))
+        if earlier_this_week == today else datetime.combine(earlier_this_week, day_time(11)),
+        datetime.combine(previous_thursday, day_time(11)),
+        datetime.combine(earlier_month, day_time(11)),
+    )
+
+def backdate_worktree(folder, date):
+    """Change fixture metadata only; never follow a path outside this session."""
+    timestamp = date.timestamp()
+
+    def stamp(path):
+        path.resolve().relative_to(root)
+        if path.is_symlink():
+            raise ValueError("Demo timestamps must not follow symbolic links")
+        os.utime(path, (timestamp, timestamp), follow_symlinks=False)
+
+    def stamp_tree(directory):
+        for child in directory.rglob("*"):
+            stamp(child)
+        stamp(directory)
+
+    # Discovery considers source directories, the .git pointer, the worktree's
+    # HEAD/index/HEAD log, and the branch ref in the shared Git directory.
+    git_directory = Path((folder / ".git").read_text().removeprefix("gitdir: ").strip())
+    if not git_directory.is_absolute():
+        git_directory = folder / git_directory
+    git_directory = git_directory.resolve()
+    git_directory.relative_to(root)
+    common_directory = (git_directory / (git_directory / "commondir").read_text().strip()).resolve()
+    common_directory.relative_to(root)
+    reference = (git_directory / "HEAD").read_text().removeprefix("ref: ").strip()
+    stamp_tree(folder)
+    stamp_tree(git_directory)
+    for path in (common_directory / reference, common_directory / "logs" / reference):
+        if path.exists():
+            stamp(path)
+
 atlas = repository("Atlas")
 grove = repository("Grove")
 website = repository("Website", swift=False)
@@ -95,7 +148,7 @@ accessibility = worktree(atlas, "accessibility", "feature/voiceover-support")
 design = worktree(grove, "design", "feature/native-settings")
 homepage = worktree(website, "homepage", "refresh/autumn-homepage")
 
-if mode == "--demo-details":
+if mode in ("--demo-details", "--demo-activity"):
     # Two actual changes: one modified tracked source and one untracked file.
     with (navigation / "Sources" / "Atlas" / "main.swift").open("a") as source:
         source.write('print("Keyboard navigation in progress")\n')
@@ -138,14 +191,27 @@ if mode == "--demo-details":
         preference_path(design): now - 26 * 60 * 60 * 1000,
         # Website intentionally has no successful-open record.
     }
+if mode == "--demo-activity":
+    dates = activity_dates(datetime.now())
+    folders = [search, navigation, accessibility, design, homepage]
+    last_opened = {
+        preference_path(folder): date.timestamp() * 1000
+        for folder, date in zip(folders[:-1], dates[:-1])
+    }
+    # Do this only after every Git verification command: an index refresh during
+    # setup would otherwise move an old fixture back into Today's activity section.
+    for folder, date in zip(folders, dates):
+        backdate_worktree(folder, date)
 preferences = {
     "schemaVersion": 1,
     "codexHome": preference_path(codex),
     "hasCompletedWelcome": mode != "--demo-welcome",
-    "pinnedWorktrees": [preference_path(search)],
+    "pinnedWorktrees": [] if mode == "--demo-activity" else [preference_path(search)],
     "worktreeLabels": {preference_path(search): "Instant search", preference_path(design): "Settings refresh"},
-    "groupByRepository": True,
+    "groupByRepository": mode != "--demo-activity",
     "lastOpened": last_opened,
 }
+if mode == "--demo-activity":
+    preferences["sortOrder"] = "activity"
 (root / "preferences.json").write_text(json.dumps(preferences, indent=2))
 print(root)
