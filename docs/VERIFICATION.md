@@ -1,5 +1,7 @@
 # Twig verification
 
+The next-version preview was checked on **7 November 2026**: **124 tests pass** (104 core and 20 sync, including real FSEvents), and the combined native demo builds and runs. Keyboard navigation, exact Finder/Xcode opening, label/pin persistence, repository defaults, additional Git roots, and the scrollable welcome were exercised in the running app. The user confirmed the global shortcut from another app. See [the preview verification record](features/NEXT_VERSION.md) for branch details, captures, and the remaining installed-app login-item and Terminal working-directory checks. The historical v0.1 verification follows.
+
 Validated locally on Apple Silicon macOS 27, Swift 6.4 / Xcode. MVP checks were performed on 29 September 2026; the minimal UI and event-driven syncing iteration was checked on 1 October 2026.
 
 ## Automated checks

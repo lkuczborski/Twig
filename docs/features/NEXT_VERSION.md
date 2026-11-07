@@ -49,9 +49,11 @@ The following checks were observed in the actual running combined preview:
 - The shortcut recorder accepted a custom combination and updated the displayed preference. The user confirmed that physical **Control–Shift–T opens Twig from another application**.
 - The personal label “Keyboard polish” saved successfully. The Pin checkbox updated persisted preferences.
 - Setting the repository editor to Xcode changed the launch explanation to “Your editor choice for this repository.”
+- Open once with Xcode opened the exact Atlas `feature/instant-search` checkout and its `Package.swift`. The resulting preferences retained empty worktree overrides and repository-editor choices.
+- Completing Welcome saved its completion flag and opened the actual menu-bar panel. Final search, selection, and action-menu captures also use that panel, without the preview-window title bar.
 - **Add Repository…** used the native folder picker. Adding the sample Atlas root found its four checkouts and merged linked checkouts already present through Codex discovery.
 
-These checks use synthetic repositories and isolated Twig preferences. Native screenshots and interaction captures are produced from this same preview; per-feature notes are linked above.
+These checks use synthetic repositories and isolated Twig preferences. Native screenshots and an 18-second walkthrough assembled from those captured app states are saved in the original checkout's ignored `dist/feature-previews` directory. The gallery is `index.html` and the video is `Twig-next-preview.mp4`; per-feature notes are linked above.
 
 ## Combined regression result
 
