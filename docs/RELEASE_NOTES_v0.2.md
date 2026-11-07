@@ -28,6 +28,4 @@ Twig v0.2 makes it easier to find, recognize, and reopen your work. It brings a 
 
 Unzip the download and move **Twig.app** to **Applications**. If upgrading, quit Twig before replacing the app. Your preferences are preserved, and Welcome introduces the new features. Twig lives in the menu bar and has no Dock icon. Liquid Glass is available on macOS 26; earlier versions use native translucent material.
 
-[Watch the 35-second intro](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-twitter.mp4) · [Editable Remotion source](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-remotion.zip)
-
 Twig remains local, with no account, analytics, cloud service, or conversation indexing. Automatic updates, remote PR/CI status, and worktree cleanup are future work. See the [roadmap](ROADMAP.md) and [verification notes](VERIFICATION.md) for scope and validation details.

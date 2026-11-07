@@ -7,7 +7,6 @@
 <p align="center">A small native macOS menu-bar app for getting back to the right project in the right editor.</p>
 <p align="center">
   <a href="https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-v0.2-macos-universal.zip">Download v0.2</a> ·
-  <a href="https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-twitter.mp4">Watch the intro</a> ·
   <a href="docs/ROADMAP.md">Roadmap</a> ·
   <a href="LICENSE">MIT License</a>
 </p>
@@ -43,7 +42,7 @@ Twig has no Dock icon. Liquid Glass is available on macOS 26; earlier versions u
 
 **Upgrading from v0.1:** quit Twig and replace the app in Applications. Your saved Codex home, editor choices, and open history are preserved. New settings receive defaults, and the welcome window introduces the new workflow. Automatic updates are not yet included.
 
-Read the [v0.2 release notes](docs/RELEASE_NOTES_v0.2.md). The release also includes a [35-second intro video](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-twitter.mp4) and its [editable Remotion source](https://github.com/lkuczborski/Twig/releases/download/v0.2/Twig-intro-remotion.zip).
+Read the [v0.2 release notes](docs/RELEASE_NOTES_v0.2.md).
 
 ## Keyboard and actions
 
