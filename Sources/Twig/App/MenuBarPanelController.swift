@@ -266,7 +266,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
 }
 
 @available(macOS 27, *)
-extension MenuBarPanelController: NSStatusItemExpandedInterfaceDelegate {
+extension MenuBarPanelController: @preconcurrency NSStatusItemExpandedInterfaceDelegate {
     func statusItem(_ statusItem: NSStatusItem, didBegin session: NSStatusItemExpandedInterfaceSession) {
         guard !isShuttingDown else { session.cancel(); return }
         showPanel()
