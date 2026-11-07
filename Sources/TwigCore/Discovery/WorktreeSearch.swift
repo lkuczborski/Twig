@@ -2,13 +2,16 @@ import Foundation
 
 public enum WorktreeSearch {
     /// Exact words and contiguous matches rank ahead of subsequences. All tokens must match.
-    public static func score(query: String, fields: [String]) -> Int? {
+    public static func score(query: String, fields: [String], literalFields: [String] = []) -> Int? {
         let tokens = normalized(query).split(whereSeparator: \.isWhitespace).map(String.init)
         guard !tokens.isEmpty else { return 0 }
         let fields = fields.map(normalized)
+        let literalFields = literalFields.map(normalized)
         var total = 0
         for token in tokens {
-            guard let best = fields.compactMap({ match(token, in: $0) }).max() else { return nil }
+            let matches = fields.compactMap { match(token, in: $0) }
+                + literalFields.compactMap { match(token, in: $0, allowingFuzzy: false) }
+            guard let best = matches.max() else { return nil }
             total += best
         }
         return total
@@ -18,13 +21,16 @@ public enum WorktreeSearch {
         text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
     }
 
-    private static func match(_ token: String, in field: String) -> Int? {
+    private static func match(_ token: String, in field: String, allowingFuzzy: Bool = true) -> Int? {
         if field == token { return 10_000 }
         if field.hasPrefix(token) { return 8_000 - min(field.count, 1_000) }
         if let range = field.range(of: token) {
             let boundary = range.lowerBound == field.startIndex || !field[field.index(before: range.lowerBound)].isLetter
             return (boundary ? 6_000 : 5_000) - min(field.count, 1_000)
         }
+        // Absolute filesystem prefixes contain many unrelated letters. Match paths literally,
+        // while keeping fuzzy abbreviations useful for project names and branches.
+        guard allowingFuzzy else { return nil }
         let characters = Array(field)
         var cursor = 0
         var first: Int?

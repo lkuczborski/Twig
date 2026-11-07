@@ -74,7 +74,8 @@ final class TwigStore {
         guard !query.isEmpty else { return sortedItems }
         return sortedItems.enumerated().compactMap { index, item -> (ScannedWorktree, Int, Int)? in
             guard let score = WorktreeSearch.score(query: query, fields: [label(for: item) ?? "", item.worktree.repositoryName,
-                item.worktree.branch ?? "detached", item.worktree.folder.path, editorName(for: item)]) else { return nil }
+                item.worktree.branch ?? "detached", editorName(for: item)],
+                literalFields: [item.worktree.folder.path]) else { return nil }
             return (item, score, index)
         }.sorted { $0.1 == $1.1 ? $0.2 < $1.2 : $0.1 > $1.1 }.map { $0.0 }
     }

@@ -29,6 +29,18 @@ struct WorktreeSearchTests {
         #expect(WorktreeSearch.score(query: "💡", fields: ["fix/💡"]) != nil)
     }
 
+    @Test func absolutePathsDoNotCreateUnrelatedFuzzyResults() {
+        let path = "/Users/atlas/.codex/worktrees/search-fixtures/Website"
+        #expect(WorktreeSearch.score(query: "at srch", fields: ["Website", "refresh/landing", "Xcode"],
+                                    literalFields: [path]) == nil)
+        #expect(WorktreeSearch.score(query: "at srch", fields: ["Atlas", "Instant search", "feature/search"],
+                                    literalFields: [path]) != nil)
+        #expect(WorktreeSearch.score(query: "search-fixtures", fields: ["Website"],
+                                    literalFields: [path]) != nil)
+        #expect(WorktreeSearch.score(query: "/users/ATLAS", fields: ["Website"],
+                                    literalFields: [path]) != nil)
+    }
+
     @Test func selectionSurvivesReorderingAndFallsBackWhenRemoved() {
         #expect(WorktreeSelection.resolved("b", in: ["c", "b", "a"]) == "b")
         #expect(WorktreeSelection.resolved("b", in: ["c", "a"]) == "c")
