@@ -20,7 +20,7 @@ The release is packaged for Apple Silicon and Intel, Developer ID signed, and no
 
 The development implementation adds project type, successful-open age, and a destination-editor icon while preserving two-line rows and branch identity. Local Git indicators report changed files, conflicts, and ahead/behind counts against locally known upstream refs, without fetching.
 
-An Activity / Project switch in the menu header chooses globally recent work or alphabetical project groups. Pins remain first; project groups keep recent work first, and search remains ranked by relevance. The selected view persists across launches.
+An Activity / Project choice in Settings → Worktree list selects recent work grouped by date or alphabetical project groups. Activity uses Today, weekday names from this week, Last week, Earlier this month when applicable, and month headings for older work. Stronger headings and separator lines distinguish sections. The menu has no permanent sort control or keyboard-hint footer. Pins remain first; project groups keep recent work first, and search remains ranked by relevance. The selected view persists across launches.
 
 Status reads run independently from discovery, with at most four concurrent checkouts and a default two-second / 1 MiB budget per checkout. Filesystem events invalidate results; work is cancelled when all Twig views are hidden. Unsupported or failed status reads remain unavailable rather than implying a clean worktree.
 

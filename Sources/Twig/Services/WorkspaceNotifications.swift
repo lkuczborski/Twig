@@ -13,5 +13,12 @@ final class WorkspaceNotifications: @unchecked Sendable {
             center.addObserver(forName: sleepName, object: nil, queue: nil) { _ in onSleep() }
         ]
     }
+
+    init(center: NotificationCenter, names: [Notification.Name], onChange: @escaping @Sendable () -> Void) {
+        self.center = center
+        tokens = names.map { name in
+            center.addObserver(forName: name, object: nil, queue: nil) { _ in onChange() }
+        }
+    }
     deinit { for token in tokens { center.removeObserver(token) } }
 }

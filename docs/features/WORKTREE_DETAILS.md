@@ -24,6 +24,8 @@ Repository discovery continues to read metadata directly without invoking Git. S
 
 ## Demo fixtures
 
+For a screenshot of date-grouped Activity, run `./script/build_and_run.sh --demo-activity`. This uses the same five repositories and Git states below, with activity spread across Today, an earlier weekday this week, Last week, and an earlier month. The source and Git metadata timestamps are backdated as well as open history, so the actual discovery and grouping code produces the headings. It selects Activity and omits pins for a compact capture, while keeping the user's real preferences separate.
+
 Generate an isolated preview session with real Git state:
 
 ```sh
@@ -36,7 +38,7 @@ To generate the fixtures without building or launching Twig:
 python3 script/make_demo.py dist/demos --demo-details
 ```
 
-The command prints the generated session directory. Pass that directory to a preview-enabled Twig build with `--twig-demo-root`. The normal `--demo` and `--demo-welcome` modes retain their five sample checkouts. Their saved grouping preference opens the Project view; the header switch can change to Activity.
+The command prints the generated session directory. Pass that directory to a preview-enabled Twig build with `--twig-demo-root`. The normal `--demo` and `--demo-welcome` modes retain their five sample checkouts. Their saved grouping preference opens the Project view; Settings → Worktree list can change to Activity.
 
 | Sample checkout | Project | Saved last opened | Actual Git state |
 | --- | --- | --- | --- |

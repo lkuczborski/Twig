@@ -14,6 +14,18 @@ struct TwigSettingsView: View {
                 LoginItemSettingsView()
                 Button("Welcome to Twig…", action: showWelcome)
             }
+            Section("Worktree list") {
+                Picker("Sort by", selection: Binding(
+                    get: { store.preferences.sortOrder },
+                    set: { store.setSortOrder($0) }
+                )) {
+                    Text("Activity").tag(WorktreeSortOrder.activity)
+                    Text("Project").tag(WorktreeSortOrder.project)
+                }
+                .pickerStyle(.segmented)
+                Text("Activity groups recent work by date. Project groups worktrees alphabetically. Pins stay at the top, and search results are ranked by relevance.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Keyboard") { ShortcutRecorderView(store: store) }
             RepositoryRootsSection(store: store)
             Section("Worktree discovery") {

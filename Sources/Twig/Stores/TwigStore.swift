@@ -12,6 +12,7 @@ final class TwigStore {
     private(set) var isRefreshing = false
     private(set) var openingID: String?
     private(set) var lastRefreshed: Date?
+    private var activityGroupingDate = Date()
     private(set) var warnings: [String] = []
     private(set) var repositoryStatuses: [RepositoryRootStatus] = []
     private(set) var isAddingRepository = false
@@ -35,6 +36,7 @@ final class TwigStore {
     @ObservationIgnored private var visibleSurfaces: Set<String> = []
     @ObservationIgnored private var debounceTask: Task<Void, Never>?
     @ObservationIgnored private var lifecycle: WorkspaceNotifications?
+    @ObservationIgnored private var calendarChanges: WorkspaceNotifications?
     @ObservationIgnored private var hasApplicationCatalog = false
     @ObservationIgnored private var refreshWaiters: [CheckedContinuation<Void, Never>] = []
     private(set) var isWatching = false
@@ -57,6 +59,12 @@ final class TwigStore {
             wakeName: NSWorkspace.didWakeNotification, sleepName: NSWorkspace.willSleepNotification,
             onWake: { [weak self] in Task { @MainActor in self?.didWake() } },
             onSleep: { [weak self] in Task { @MainActor in self?.willSleep() } }
+        )
+        calendarChanges = WorkspaceNotifications(
+            center: .default,
+            names: [.NSCalendarDayChanged, .NSSystemTimeZoneDidChange, .NSSystemClockDidChange,
+                    NSLocale.currentLocaleDidChangeNotification],
+            onChange: { [weak self] in Task { @MainActor in self?.refreshActivityGroupingDate() } }
         )
     }
 
@@ -129,15 +137,25 @@ final class TwigStore {
         return WorktreeOrganization.sections(
             filteredItems.map(\.worktree),
             pinnedIDs: isSearching ? [] : preferences.pinnedWorktrees,
-            sortOrder: isSearching ? .activity : preferences.sortOrder
+            sortOrder: isSearching ? .activity : preferences.sortOrder,
+            activityDates: isSearching ? nil : activityDates,
+            now: activityGroupingDate
         )
     }
 
     var catalogSections: [WorktreeSection] {
         WorktreeOrganization.sections(sortedItems.map(\.worktree),
                                       pinnedIDs: preferences.pinnedWorktrees,
-                                      sortOrder: preferences.sortOrder)
+                                      sortOrder: preferences.sortOrder,
+                                      activityDates: activityDates,
+                                      now: activityGroupingDate)
     }
+
+    private var activityDates: [String: Date] {
+        Dictionary(uniqueKeysWithValues: items.map { ($0.id, activityDate(for: $0)) })
+    }
+
+    private func refreshActivityGroupingDate() { activityGroupingDate = Date() }
 
     var visibleItems: [ScannedWorktree] {
         let byID = Dictionary(uniqueKeysWithValues: filteredItems.map { ($0.id, $0) })
@@ -216,6 +234,7 @@ final class TwigStore {
     }
 
     func contentVisibilityChanged(_ surface: String, isVisible: Bool) {
+        if isVisible { refreshActivityGroupingDate() }
         if isVisible { visibleSurfaces.insert(surface) }
         else { visibleSurfaces.remove(surface) }
         syncState.isVisible = !visibleSurfaces.isEmpty
@@ -324,6 +343,7 @@ final class TwigStore {
     }
 
     private func didWake() {
+        refreshActivityGroupingDate()
         gitStatusStore.setVisible(syncState.isVisible)
         syncState.invalidate(.full)
         configureWatcher(force: true)

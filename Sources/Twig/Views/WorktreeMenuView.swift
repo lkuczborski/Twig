@@ -10,10 +10,8 @@ struct WorktreeMenuView: View {
     var body: some View {
         VStack(spacing: 0) {
             searchBar
-            sortControl
             Divider()
             content
-            keyboardFooter
             if let message = store.errorMessage { errorBanner(message) }
             if !store.warnings.isEmpty {
                 HStack(alignment: .top, spacing: 7) {
@@ -76,28 +74,6 @@ struct WorktreeMenuView: View {
         .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 9)
     }
 
-    private var sortControl: some View {
-        HStack(spacing: 10) {
-            Text(store.isSearching ? "By relevance" : "Sort by")
-                .font(.system(size: 11)).foregroundStyle(.secondary)
-            Spacer(minLength: 0)
-            Picker("Sort worktrees", selection: Binding(
-                get: { store.preferences.sortOrder },
-                set: { store.setSortOrder($0) }
-            )) {
-                Text("Activity").tag(WorktreeSortOrder.activity)
-                Text("Project").tag(WorktreeSortOrder.project)
-            }
-            .pickerStyle(.segmented).controlSize(.small).labelsHidden()
-            .frame(width: 210)
-            .disabled(store.isSearching)
-            .help(store.isSearching
-                  ? "Search results are ranked by relevance. Clear search to change the sort order."
-                  : "Activity shows recent work first. Project groups worktrees by project name. Pins stay at the top.")
-        }
-        .padding(.horizontal, 12).padding(.bottom, 9)
-    }
-
     private var content: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -140,22 +116,6 @@ struct WorktreeMenuView: View {
         }
     }
 
-    private var keyboardFooter: some View {
-        HStack(spacing: 5) {
-            Text("↑ ↓").font(.system(size: 11, design: .monospaced))
-            Text("Choose").font(.system(size: 10))
-            Spacer(minLength: 8)
-            if let item = store.highlightedItem {
-                Text("Open in \(store.editorName(for: item))").font(.system(size: 10)).lineLimit(1)
-                Image(systemName: "return").font(.system(size: 10, weight: .medium))
-            }
-        }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 13).padding(.vertical, 8)
-        .overlay(alignment: .top) { Divider() }
-        .accessibilityElement(children: .combine)
-    }
-
     private var contentHeight: CGFloat {
         // Size from the unfiltered catalog to keep the search field anchored.
         let sections = store.catalogSections
@@ -164,14 +124,19 @@ struct WorktreeMenuView: View {
     }
 
     private func sectionHeader(_ title: String, section: WorktreeSection) -> some View {
-        HStack(spacing: 5) {
-            if section.id == "pinned" { Image(systemName: "pin.fill").font(.system(size: 9)) }
+        HStack(spacing: 8) {
+            if section.id == "pinned" {
+                Image(systemName: "pin.fill").font(.system(size: 10)).accessibilityHidden(true)
+            }
             Text(title).lineLimit(1).truncationMode(.middle)
-            Spacer(minLength: 0)
-            Text("\(section.worktrees.count)").monospacedDigit().foregroundStyle(.tertiary)
+            Rectangle().fill(.primary.opacity(0.18)).frame(height: 0.5).accessibilityHidden(true)
+            Text("\(section.worktrees.count)").font(.system(size: 10, weight: .medium))
+                .monospacedDigit().foregroundStyle(.secondary)
+                .accessibilityLabel(section.worktrees.count == 1 ? "1 worktree" : "\(section.worktrees.count) worktrees")
         }
-        .font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+        .font(.system(size: 12, weight: .semibold)).foregroundStyle(.primary)
         .padding(.horizontal, 8).padding(.top, 8).padding(.bottom, 4)
+        .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
 
