@@ -14,8 +14,13 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
     private var globalMouseMonitor: Any?
     private var localEventMonitor: Any?
     private var menuObservers: [NSObjectProtocol] = []
+    private var selectionObservers: [NSObjectProtocol] = []
     private var trackingMenus = 0
     private var globalShortcut: GlobalShortcutService?
+    private var isShuttingDown = false
+#if TWIG_PREVIEW
+    private var lastRecordedSelection: Bool?
+#endif
 
     init(store: TwigStore) {
         self.store = store
@@ -43,6 +48,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "arrow.triangle.branch", accessibilityDescription: "Twig")
             button.image?.isTemplate = true
+            // Selection is presentation state, not the transient mouse-down highlight.
+            button.setButtonType(.pushOnPushOff)
+            (button.cell as? NSButtonCell)?.showsStateBy = .changeBackgroundCell
             button.toolTip = "Twig"
             button.target = self
             button.action = #selector(togglePanel)
@@ -52,6 +60,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         statusItem.isVisible = true
         statusItem.button?.setAccessibilityLabel("Twig")
         observeMenus()
+        observeWindowSelection(panel)
+        observeSelectionChanges([NSApplication.didBecomeActiveNotification, NSApplication.didResignActiveNotification], object: NSApp)
+        updateStatusSelection()
         let shortcut = GlobalShortcutService { [weak self] in self?.togglePanel() }
         globalShortcut = shortcut
         store.onGlobalShortcutChange = { [weak shortcut] in shortcut?.configure($0) }
@@ -70,9 +81,11 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             window.isReleasedWhenClosed = false
             window.center()
             settingsWindow = window
+            observeWindowSelection(window)
         }
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
+        updateStatusSelection()
     }
 
     @objc func showWelcome() {
@@ -90,13 +103,16 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
                     guard self.store.completeWelcome() else { return }
                     self.welcomeWindow?.orderOut(nil)
                     if !self.panel.isVisible { self.togglePanel() }
+                    self.updateStatusSelection()
                 }))
             window.isReleasedWhenClosed = false
             window.center()
             welcomeWindow = window
+            observeWindowSelection(window)
         }
         NSApp.activate(ignoringOtherApps: true)
         welcomeWindow?.makeKeyAndOrderFront(nil)
+        updateStatusSelection()
     }
 
     private func showDetails() {
@@ -110,9 +126,11 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             window.isReleasedWhenClosed = false
             window.center()
             detailsWindow = window
+            observeWindowSelection(window)
         }
         NSApp.activate(ignoringOtherApps: true)
         detailsWindow?.makeKeyAndOrderFront(nil)
+        updateStatusSelection()
     }
 
 #if TWIG_PREVIEW
@@ -123,22 +141,31 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         preview.contentView = NSHostingView(rootView: WorktreeMenuView(store: store, presentation: MenuPresentationActions(
             showSettings: { [weak self] in self?.showSettings() },
             showDetails: { [weak self] in self?.showDetails() },
-            dismiss: { [weak self] in self?.previewWindow?.orderOut(nil) })))
+            dismiss: { [weak self] in
+                self?.previewWindow?.orderOut(nil)
+                self?.updateStatusSelection()
+            })))
         preview.isReleasedWhenClosed = false
         preview.center()
+        previewWindow = preview
+        observeWindowSelection(preview)
         preview.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        previewWindow = preview
+        updateStatusSelection()
     }
     private var previewWindow: NSWindow?
 #endif
 
     func shutdown() {
+        isShuttingDown = true
         dismiss()
         globalShortcut?.stop()
         store.onGlobalShortcutChange = nil
         menuObservers.forEach(NotificationCenter.default.removeObserver)
         menuObservers.removeAll()
+        selectionObservers.forEach(NotificationCenter.default.removeObserver)
+        selectionObservers.removeAll()
+        statusItem.button?.state = .off
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 
@@ -148,9 +175,9 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
             if let size = panel.contentView?.fittingSize { resize(to: size) }
             positionPanel()
             panel.makeKeyAndOrderFront(nil)
-            statusItem.button?.highlight(true)
             installEventMonitors()
         }
+        updateStatusSelection()
 #if TWIG_PREVIEW
         PreviewEnvironment.record("panel toggled: visible=\(panel.isVisible), key=\(panel.isKeyWindow)")
 #endif
@@ -216,6 +243,41 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
         }
     }
 
+    private func observeWindowSelection(_ window: NSWindow) {
+        observeSelectionChanges([
+            NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification,
+            NSWindow.didChangeOcclusionStateNotification, NSWindow.didMiniaturizeNotification,
+            NSWindow.didDeminiaturizeNotification, NSWindow.willCloseNotification
+        ], object: window)
+    }
+
+    private func observeSelectionChanges(_ names: [Notification.Name], object: AnyObject) {
+        for name in names {
+            selectionObservers.append(NotificationCenter.default.addObserver(forName: name, object: object, queue: .main) { [weak self] _ in
+                // In particular, willClose arrives before isVisible becomes false.
+                DispatchQueue.main.async { [weak self] in self?.updateStatusSelection() }
+            })
+        }
+    }
+
+    private func updateStatusSelection() {
+        guard !isShuttingDown else { return }
+        var windows = [settingsWindow, welcomeWindow, detailsWindow].compactMap { $0 }
+#if TWIG_PREVIEW
+        if let previewWindow { windows.append(previewWindow) }
+#endif
+        let visibleWindows = windows.filter { $0.isVisible && !$0.isMiniaturized }
+        // Native action menus may temporarily take key status from the visible panel.
+        let selected = panel.isVisible || (NSApp.isActive && !visibleWindows.isEmpty)
+        statusItem.button?.state = selected ? .on : .off
+#if TWIG_PREVIEW
+        if lastRecordedSelection != selected {
+            lastRecordedSelection = selected
+            PreviewEnvironment.record("status selection: selected=\(selected), panel=\(panel.isVisible), active=\(NSApp.isActive), windows=\(visibleWindows.map(\.title))")
+        }
+#endif
+    }
+
     func windowDidResignKey(_ notification: Notification) {
         // A native action menu may temporarily own focus. Let its tracking finish.
         DispatchQueue.main.async { [weak self] in
@@ -227,7 +289,7 @@ final class MenuBarPanelController: NSObject, NSWindowDelegate {
 
     private func dismiss() {
         panel.orderOut(nil)
-        statusItem.button?.highlight(false)
+        updateStatusSelection()
         if let monitor = globalMouseMonitor { NSEvent.removeMonitor(monitor); globalMouseMonitor = nil }
         if let monitor = localEventMonitor { NSEvent.removeMonitor(monitor); localEventMonitor = nil }
     }
