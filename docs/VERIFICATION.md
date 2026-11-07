@@ -1,10 +1,12 @@
 # Twig verification
 
-## Unreleased menu-bar selection — 7 November 2026
+## Unreleased menu-bar presentation — 7 November 2026
 
-The status button now uses persistent AppKit selection instead of a momentary mouse highlight. It stays selected while the worktree panel is visible or Twig is active with an open Settings, Welcome, details, or preview window. It clears when those windows are closed, minimized, or inactive and the panel is hidden.
+The status button uses AppKit's native `highlight(_:)` API, with a coalesced refresh in the default run-loop mode after mouse and menu tracking finishes. Its factory button behavior is preserved, including cancelled clicks. Selection follows the visible worktree panel or an active Twig window and clears when no corresponding surface is active. Shutdown removes the tracking monitor and observers.
 
-The combined preview build compiled and native window checks confirmed selection on activation, selection retained across Settings and preview windows, clearing on app inactivity, and clearing after closing the last window while the app remained active. These transitions were checked through the preview's runtime state log; the rendered menu-bar background was not visually reverified. The normal build then compiled and passed launch verification with the user's real discovery settings. Multiple displays and older macOS versions remain untested.
+The panel opens from the status button's left edge if it fits, otherwise aligns the right edges, with a screen-bounds fallback. It uses the status button's own screen and global AppKit coordinates, preserving nonzero screen origins.
+
+The preview build compiled. Opening the actual menu panel from Welcome produced `highlighted=true`; runtime geometry showed the panel and status button both at x=1072, with the 360-point panel fully inside the 1512-point visible screen. Native window checks cover activation, Settings/preview transitions, app inactivity, and closing the last window. The normal build compiled and passed launch verification with real discovery settings. The rendered highlight after a physical status-button click, right-edge fallback on a repositioned icon, multiple displays, and older macOS versions remain outside automated verification. The earlier generic-button-state check did not verify the native background and was superseded by this correction.
 
 ## Unreleased worktree details — 7 November 2026
 
