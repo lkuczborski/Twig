@@ -16,7 +16,6 @@ final class LoginItemService {
         switch status {
         case .enabled: "Twig will be ready in your menu bar when you sign in."
         case .requiresApproval: "Allow Twig in Login Items to finish enabling this."
-        case .notFound: "Move Twig to Applications, then try again."
         default: "Keep your worktrees close, every time you sign in."
         }
     }
