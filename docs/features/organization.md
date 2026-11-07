@@ -1,6 +1,6 @@
 # Worktree organization
 
-Twig keeps pinned worktrees at the top of the menu and groups other checkouts by their shared Git repository. Repository groups only get a heading when at least two unpinned checkouts share that repository; single checkouts retain the compact two-line row. Within a group, the branch becomes the primary title. Grouping can be disabled in the gear menu.
+Twig keeps pinned worktrees at the top of the menu and groups other checkouts by their shared Git repository. Repository groups get a heading when at least two unpinned checkouts share that repository. Independent single checkouts retain the compact two-line row and collect under **Other worktrees** after repository groups, or **Recent** when only Pinned precedes them. A list containing only single checkouts needs no heading. These boundaries keep unpinned rows from appearing to belong to Pinned or the preceding repository. Within a repository group, the branch becomes the primary title. Grouping can be disabled in the gear menu.
 
 The row actions menu provides **Pin worktree / Unpin worktree** and **Edit label…**. Label editing opens the existing detail window, with a personal-label field, Save/Clear actions, and a pin checkbox. Labels only affect Twig; branch names and checkout directories are untouched. A labeled row keeps the repository and branch as context. Full branch strings reach SwiftUI's middle truncation, preserving distinctive endings when room runs out.
 
@@ -15,6 +15,7 @@ Repository identity uses the canonical common Git directory, with Git directory 
 - `./script/build_and_run.sh --build` passed; it staged and ad-hoc signed the app without launching it.
 - `./script/test.sh` passed all 82 tests, including real FSEvents fixtures. Seven new tests cover pins without duplicates, same-name repository separation, stable group order, flat search order, missing metadata, symlink identity, and preference round-trip/removal.
 - `git diff --check` passed.
+- A follow-up section-boundary fix passed all 10 `WorktreeOrganizationTests`, including four additional cases for pins followed by singletons, repositories followed by singletons, all section kinds together, and a minimal standalone singleton list.
 - The root agent owns running-app checks and screenshot/video capture after integration.
 
 ## UI checks for the combined preview

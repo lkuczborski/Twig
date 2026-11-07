@@ -1,6 +1,6 @@
 import Foundation
 
-/// A presentation group that preserves the supplied activity or search order.
+/// A presentation group that preserves the supplied order within each section.
 public struct WorktreeSection: Identifiable, Sendable, Equatable {
     public let id: String
     public let title: String?
@@ -33,10 +33,21 @@ public enum WorktreeOrganization {
         var emitted: Set<String> = []
         for worktree in remaining {
             let key = repositoryKey(worktree)
-            guard emitted.insert(key).inserted, let group = groups[key] else { continue }
+            guard emitted.insert(key).inserted, let group = groups[key], group.count > 1 else { continue }
             sections.append(WorktreeSection(
-                id: "repository:\(key)", title: group.count > 1 ? worktree.repositoryName : nil,
-                isRepositoryGroup: group.count > 1, worktrees: group
+                id: "repository:\(key)", title: worktree.repositoryName,
+                isRepositoryGroup: true, worktrees: group
+            ))
+        }
+        // A row with no heading after Pinned or a repository heading appears to
+        // belong to that section. Give unrelated singletons one clear boundary.
+        let singletons = remaining.filter { groups[repositoryKey($0)]?.count == 1 }
+        if !singletons.isEmpty {
+            let hasRepositoryGroups = sections.contains(where: \.isRepositoryGroup)
+            sections.append(WorktreeSection(
+                id: hasRepositoryGroups ? "other" : "recent",
+                title: hasRepositoryGroups ? "Other worktrees" : (pinned.isEmpty ? nil : "Recent"),
+                isRepositoryGroup: false, worktrees: singletons
             ))
         }
         return sections

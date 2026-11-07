@@ -27,6 +27,7 @@ struct WorktreeOrganizationTests {
         #expect(sections[1].worktrees.map(\.id) == [b.id])
         #expect(sections[0].isRepositoryGroup)
         #expect(!sections[1].isRepositoryGroup)
+        #expect(sections[1].title == "Other worktrees")
     }
 
     @Test
@@ -54,8 +55,64 @@ struct WorktreeOrganizationTests {
     func missingRepositoryMetadataDoesNotMergeUnrelatedWorktrees() {
         let a = worktree("a", repository: "App", common: nil)
         let b = worktree("b", repository: "App", common: nil)
-        #expect(WorktreeOrganization.sections([a, b], pinnedIDs: [], groupByRepository: true).count == 2)
+        let sections = WorktreeOrganization.sections([a, b], pinnedIDs: [], groupByRepository: true)
+        #expect(sections.count == 1)
+        #expect(!sections[0].isRepositoryGroup)
+        #expect(sections[0].title == nil)
+        #expect(sections[0].worktrees.map(\.id) == [a.id, b.id])
         #expect(WorktreeOrganization.sections([], pinnedIDs: [a.id], groupByRepository: true).isEmpty)
+    }
+
+    @Test
+    func singletonsAfterPinsHaveTheirOwnRecentHeading() {
+        let pinned = worktree("pinned", repository: "Atlas", common: "/Atlas/.git")
+        let sibling = worktree("sibling", repository: "Atlas", common: "/Atlas/.git")
+        let other = worktree("other", repository: "Twig", common: "/Twig/.git")
+        let sections = WorktreeOrganization.sections([other, pinned, sibling],
+                                                     pinnedIDs: [pinned.id], groupByRepository: true)
+        #expect(sections.map(\.title) == ["Pinned", "Recent"])
+        #expect(sections[1].worktrees.map(\.id) == [other.id, sibling.id])
+        #expect(!sections[1].isRepositoryGroup)
+    }
+
+    @Test
+    func singletonsFollowRepositoryGroupsUnderAnExplicitHeading() {
+        let first = worktree("first", repository: "Website", common: "/Website/.git")
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let middle = worktree("middle", repository: "Twig", common: "/Twig/.git")
+        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
+        let last = worktree("last", repository: "Notes", common: "/Notes/.git")
+        let sections = WorktreeOrganization.sections([first, a, middle, b, last],
+                                                     pinnedIDs: [], groupByRepository: true)
+        #expect(sections.map(\.title) == ["Atlas", "Other worktrees"])
+        #expect(sections[0].worktrees.map(\.id) == [a.id, b.id])
+        #expect(sections[1].worktrees.map(\.id) == [first.id, middle.id, last.id])
+        #expect(sections[1].id == "other")
+        #expect(!sections[1].isRepositoryGroup)
+    }
+
+    @Test
+    func pinsGroupsAndSingletonsAllHaveVisibleBoundaries() {
+        let pinned = worktree("pinned", repository: "Notes", common: "/Notes/.git")
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let b = worktree("b", repository: "Atlas", common: "/Atlas/.git")
+        let other = worktree("other", repository: "Twig", common: "/Twig/.git")
+        let sections = WorktreeOrganization.sections([other, a, pinned, b],
+                                                     pinnedIDs: [pinned.id], groupByRepository: true)
+        #expect(sections.map(\.title) == ["Pinned", "Atlas", "Other worktrees"])
+        #expect(sections.flatMap(\.worktrees).map(\.id) == [pinned.id, a.id, b.id, other.id])
+        #expect(sections.allSatisfy { $0.title != nil })
+    }
+
+    @Test
+    func standaloneSingletonListKeepsMinimalPresentationAndOrder() {
+        let a = worktree("a", repository: "Atlas", common: "/Atlas/.git")
+        let b = worktree("b", repository: "Twig", common: "/Twig/.git")
+        let sections = WorktreeOrganization.sections([b, a], pinnedIDs: [], groupByRepository: true)
+        #expect(sections.count == 1)
+        #expect(sections[0].title == nil)
+        #expect(sections[0].worktrees.map(\.id) == [b.id, a.id])
+        #expect(!sections[0].isRepositoryGroup)
     }
 
     @Test
